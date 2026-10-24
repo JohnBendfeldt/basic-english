@@ -1,10 +1,12 @@
 /**
- * Utility functions for text-to-speech using browser speech synthesis
+ * Utility functions for text-to-speech using browser speech synthesis for Basic English
  */
 import { 
-  speakText, 
+  speakEnglishText, 
   isSpeechSupported as isBrowserSpeechSupported,
-  initVoices as initBrowserVoices
+  initVoices as initBrowserVoices,
+  SpeechOptions,
+  EnglishAccent
 } from './browserSpeech';
 
 // Track currently speaking items by button ID
@@ -13,12 +15,12 @@ const speakingButtons = new Map<string, boolean>();
 // Speech queue for each button
 const speechQueues = new Map<string, Array<{
   text: string;
-  lang: string;
+  lang?: string;
+  options?: SpeechOptions;
   onEnd?: () => void;
   onError?: (err: unknown) => void;
 }>>();
 
-// Track if initialization has happened
 let isInitialized = false;
 
 // Check if speech is supported
@@ -40,19 +42,15 @@ export const initVoices = async (): Promise<void> => {
 
 // Process the queue for a specific button
 const processSpeechQueue = async (buttonId: string): Promise<void> => {
-  // If already speaking or no items in queue, do nothing
   if (speakingButtons.get(buttonId) || !speechQueues.has(buttonId) || speechQueues.get(buttonId)?.length === 0) {
     return;
   }
   
-  // Mark this button as speaking
   speakingButtons.set(buttonId, true);
   
-  // Get the queue for this button
   const buttonQueue = speechQueues.get(buttonId) || [];
   const queueItem = buttonQueue.shift();
   
-  // Update the queue
   speechQueues.set(buttonId, buttonQueue);
   
   if (!queueItem) {
@@ -60,24 +58,27 @@ const processSpeechQueue = async (buttonId: string): Promise<void> => {
     return;
   }
   
-  const { text, lang, onEnd, onError } = queueItem;
+  const { text, lang, options, onEnd, onError } = queueItem;
   
   try {
-    // Use browser speech synthesis to play audio
-    speakText(
+    const speechOptions: SpeechOptions = {
+      accent: (lang as EnglishAccent) || options?.accent || 'en-US',
+      rate: options?.rate ?? 0.9,
+      pitch: options?.pitch ?? 1.0,
+    };
+
+    speakEnglishText(
       text,
-      lang,
+      speechOptions,
       () => {
         speakingButtons.set(buttonId, false);
         if (onEnd) onEnd();
-        // Process next item in queue
         processSpeechQueue(buttonId);
       },
       (error: Error) => {
         console.error('Speech synthesis error:', error);
         speakingButtons.set(buttonId, false);
         if (onError) onError(error);
-        // Process next item in queue
         processSpeechQueue(buttonId);
       }
     );
@@ -85,7 +86,6 @@ const processSpeechQueue = async (buttonId: string): Promise<void> => {
     console.error('Error during speech:', error);
     speakingButtons.set(buttonId, false);
     if (onError) onError(error);
-    // Process next item in queue
     processSpeechQueue(buttonId);
   }
 };
@@ -93,40 +93,33 @@ const processSpeechQueue = async (buttonId: string): Promise<void> => {
 // Speak text using browser speech synthesis
 export const speak = (
   text: string, 
-  lang = 'ru-RU',
+  lang = 'en-US',
   buttonId: string,
   onEnd?: () => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  options?: SpeechOptions
 ): void => {
-  // Initialize the queue for this button if it doesn't exist
   if (!speechQueues.has(buttonId)) {
     speechQueues.set(buttonId, []);
   }
   
-  // Add the speech request to this button's queue
   const buttonQueue = speechQueues.get(buttonId) || [];
-  buttonQueue.push({ text, lang, onEnd, onError });
+  buttonQueue.push({ text, lang, options, onEnd, onError });
   speechQueues.set(buttonId, buttonQueue);
   
-  // Process this button's queue
   processSpeechQueue(buttonId);
 };
 
-// Add a function to cancel all speaking for cleanup purposes
+// Cancel all speech for cleanup
 export const cancelAllSpeech = (): void => {
-  // Clear all speech queues
   speechQueues.clear();
-  
-  // Reset all speaking states
   speakingButtons.clear();
   
-  // Cancel any ongoing speech synthesis
-  if (window.speechSynthesis) {
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }
 };
 
-// Create a named export object to avoid ESLint warning
 const speechUtils = {
   isSpeechSupported,
   speak,

@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript interfaces for the Russian Learning App
+ * Shared TypeScript interfaces for Basic English (basicenglish.school / basicenglish.academy)
  */
 
 // Alphabet item structure
@@ -7,15 +7,19 @@ export interface AlphabetItem {
   letter: string;
   pronunciation: string;
   example: string;
-  russianWord?: string;
-  englishWord?: string;
+  russianWord?: string; // Target example word (e.g. Apple)
+  englishWord?: string; // Meaning or pronunciation note
+  meaning?: string;
+  phonics?: string;
 }
 
-// Phrase item structure - ensure pronunciation is required
+// Phrase item structure
 export interface PhraseItem {
-  russian: string;
-  english: string;
-  pronunciation: string; // Not optional to match the expected type in Phrases component
+  russian: string;       // Primary target phrase (English text)
+  english: string;       // Meaning / Definition / Context
+  pronunciation: string; // Phonetic guide
+  meaning?: string;
+  category?: string;
 }
 
 // Quiz-related interfaces

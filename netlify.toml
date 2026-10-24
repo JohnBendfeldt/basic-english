@@ -6,22 +6,34 @@
   NODE_VERSION = "22"
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_ANON_KEY,VITE_SUPABASE_URL"
 
-# Force HTTPS and non-www
+# Force HTTPS and non-www for basicenglish.school & basicenglish.academy
 [[redirects]]
-  from = "http://basicrussian.org/*"
-  to = "https://basicrussian.org/:splat"
+  from = "http://basicenglish.school/*"
+  to = "https://basicenglish.school/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "http://www.basicrussian.org/*"
-  to = "https://basicrussian.org/:splat"
+  from = "http://www.basicenglish.school/*"
+  to = "https://basicenglish.school/:splat"
   status = 301
   force = true
 
 [[redirects]]
-  from = "https://www.basicrussian.org/*"
-  to = "https://basicrussian.org/:splat"
+  from = "https://www.basicenglish.school/*"
+  to = "https://basicenglish.school/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://basicenglish.academy/*"
+  to = "https://basicenglish.school/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://basicenglish.academy/*"
+  to = "https://basicenglish.school/:splat"
   status = 301
   force = true
 

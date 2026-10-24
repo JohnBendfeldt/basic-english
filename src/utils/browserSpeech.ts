@@ -1,319 +1,197 @@
 /**
- * Browser Speech Synthesis for Russian language with audio file fallback
+ * Native Browser Speech Synthesis for Basic English (basicenglish.school / basicenglish.academy)
+ * 100% client-side, zero latency, supported natively across all modern devices.
  */
 
-// Audio file mapping
-interface AudioFileMap {
-  [key: string]: string;
+export type EnglishAccent = 'en-US' | 'en-GB' | 'en-AU';
+
+export interface SpeechOptions {
+  accent?: EnglishAccent;
+  rate?: number; // 0.7 = slow (beginner), 0.9 = natural measured (default), 1.0 = normal
+  pitch?: number;
 }
 
-// Cache for audio lookups
-let audioFilesCache: AudioFileMap | null = null;
-let audioFilesFetched = false;
-
-// Cache for successful voice lookups
-const voiceCache: {
-  russian?: SpeechSynthesisVoice | null;
-  lastCheck: number;
-} = {
-  lastCheck: 0
-};
+// Active speech settings
+let currentAccent: EnglishAccent = 'en-US';
+let currentRate = 0.9;
 
 /**
- * Get available Russian voices from the browser
+ * Update the user's preferred English accent
  */
-export const getRussianVoices = (): SpeechSynthesisVoice[] => {
-  if (!window.speechSynthesis) return [];
-  
-  const allVoices = window.speechSynthesis.getVoices();
-  return allVoices.filter(voice => 
-    voice.lang.toLowerCase().includes('ru') || 
-    voice.name.toLowerCase().includes('russian')
-  );
-};
-
-/**
- * Get the best Russian voice available
- */
-export const getBestRussianVoice = (): SpeechSynthesisVoice | null => {
-  // Use cached voice if available and less than 10 minutes old
-  const now = Date.now();
-  if (voiceCache.russian !== undefined && now - voiceCache.lastCheck < 600000) {
-    return voiceCache.russian;
-  }
-  
-  // Get all Russian voices
-  const russianVoices = getRussianVoices();
-  
-  if (russianVoices.length === 0) {
-    voiceCache.russian = null;
-    voiceCache.lastCheck = now;
-    return null;
-  }
-  
-  // Prefer female voices for Russian (typically clearer)
-  const femaleVoice = russianVoices.find(voice => 
-    voice.name.includes('Female') || 
-    voice.name.includes('Tatyana') || 
-    voice.name.includes('Milena') ||
-    voice.name.includes('Yelena')
-  );
-  
-  if (femaleVoice) {
-    voiceCache.russian = femaleVoice;
-    voiceCache.lastCheck = now;
-    return femaleVoice;
-  }
-  
-  // Fall back to any Russian voice
-  voiceCache.russian = russianVoices[0];
-  voiceCache.lastCheck = now;
-  return russianVoices[0];
-};
-
-/**
- * Check if at least one Russian voice is available
- */
-export const isRussianVoiceAvailable = (): boolean => {
-  return getBestRussianVoice() !== null;
-};
-
-/**
- * Try to load audio file for the text
- * @returns URL to audio file if found, null otherwise
- */
-const getAudioFileForText = async (text: string): Promise<string | null> => {
-  if (!audioFilesFetched) {
-    try {
-      // Try to fetch the audio index
-      const response = await fetch('/audio/index.json');
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Build a map of text -> audio file path
-        audioFilesCache = {};
-        
-        // Map alphabet letters
-        if (data.files.alphabet) {
-          data.files.alphabet.forEach((file: any) => {
-            const letter = file.filename.replace('.mp3', '');
-            // Fix non-null assertion warning by checking if audioFilesCache exists
-            if (audioFilesCache) {
-              audioFilesCache[letter] = file.path;
-            }
-          });
-        }
-        
-        // Map examples, phrases, numbers and words
-        ['examples', 'phrases', 'numbers', 'words'].forEach(category => {
-          if (data.files[category]) {
-            data.files[category].forEach((file: any) => {
-              const word = file.filename.replace('.mp3', '').replace(/_/g, ' ');
-              // Fix non-null assertion warning by checking if audioFilesCache exists
-              if (audioFilesCache) {
-                audioFilesCache[word] = file.path;
-              }
-            });
-          }
-        });
-      }
-    } catch (e) {
-      // Could not load audio index, falling back to browser TTS
-    } finally {
-      audioFilesFetched = true;
-    }
-  }
-  
-  // If we have a cache, try to find the text
-  if (audioFilesCache) {
-    const normalizedText = text.toLowerCase().trim();
-    
-    // Exact match
-    if (audioFilesCache[normalizedText]) {
-      return audioFilesCache[normalizedText];
-    }
-    
-    // Search for closest match
-    for (const [word, path] of Object.entries(audioFilesCache)) {
-      if (normalizedText.includes(word) || word.includes(normalizedText)) {
-        return path;
-      }
-    }
-  }
-  
-  return null;
-};
-
-/**
- * Speaks the text using browser speech synthesis
- * Falls back to local audio files only if no Russian voice is available
- */
-export const speakText = async (
-  text: string, 
-  lang = 'ru-RU',
-  onEnd?: () => void,
-  onError?: (error: Error) => void
-): Promise<void> => {
+export const setPreferredAccent = (accent: EnglishAccent): void => {
+  currentAccent = accent;
   try {
-    // Check if a Russian voice is available in the browser
-    const hasRussianVoice = isRussianVoiceAvailable();
-    
-    if (hasRussianVoice) {
-      // If Russian voice is available, use browser's speech synthesis
-      playWithBrowserTTS(text, lang, onEnd, onError);
-      return;
-    }
-    
-    // If no Russian voice is available, try to use a local audio file
-    const audioFilePath = await getAudioFileForText(text);
-    
-    if (audioFilePath) {
-      // Use audio element with local file
-      const audio = new Audio(audioFilePath);
-      
-      audio.onended = () => {
-        if (onEnd) onEnd();
-      };
-      
-      audio.onerror = () => {
-        // If local audio fails, fall back to browser TTS as last resort
-        playWithBrowserTTS(text, lang, onEnd, onError);
-      };
-      
-      await audio.play();
-      return;
-    }
-    
-    // If no audio file available either, use browser TTS as last resort
-    playWithBrowserTTS(text, lang, onEnd, onError);
-  } catch (error) {
-    console.error('Speech error:', error);
-    if (onError) {
-      if (error instanceof Error) {
-        onError(error);
-      } else {
-        onError(new Error('Unknown speech error'));
-      }
-    }
+    localStorage.setItem('basicenglish_accent', accent);
+  } catch (e) {
+    // Ignore storage errors in private browsing
   }
 };
 
 /**
- * Uses browser's built-in speech synthesis
- * Renamed from useBrowserTTS to playWithBrowserTTS to avoid ESLint react-hooks warning
+ * Get current preferred accent
  */
-const playWithBrowserTTS = (
+export const getPreferredAccent = (): EnglishAccent => {
+  try {
+    const saved = localStorage.getItem('basicenglish_accent') as EnglishAccent;
+    if (saved && (saved === 'en-US' || saved === 'en-GB' || saved === 'en-AU')) {
+      currentAccent = saved;
+      return saved;
+    }
+  } catch (e) {
+    // Ignore storage errors
+  }
+  return currentAccent;
+};
+
+/**
+ * Update the default speech rate
+ */
+export const setPreferredRate = (rate: number): void => {
+  currentRate = rate;
+};
+
+export const getPreferredRate = (): number => {
+  return currentRate;
+};
+
+/**
+ * Get all available English voices from the browser
+ */
+export const getEnglishVoices = (): SpeechSynthesisVoice[] => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return [];
+  const voices = window.speechSynthesis.getVoices();
+  return voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+};
+
+/**
+ * Find the highest-quality English voice matching the requested accent
+ */
+export const getBestEnglishVoice = (accent: EnglishAccent = getPreferredAccent()): SpeechSynthesisVoice | null => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  const allEnglish = getEnglishVoices();
+  if (allEnglish.length === 0) return null;
+
+  // 1. Try to find natural/premium voices matching the specific accent
+  const accentMatches = allEnglish.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(accent.toLowerCase()));
+  const pool = accentMatches.length > 0 ? accentMatches : allEnglish;
+
+  // Prioritize premium / natural sounding voices
+  const preferredVoice = pool.find(v => 
+    v.name.includes('Natural') || 
+    v.name.includes('Online (Natural)') ||
+    v.name.includes('Siri') ||
+    v.name.includes('Google') ||
+    v.name.includes('Samantha') ||
+    v.name.includes('Daniel')
+  );
+
+  return preferredVoice || pool[0];
+};
+
+/**
+ * Speak English text using native browser speech synthesis
+ */
+export const speakEnglishText = (
   text: string,
-  lang: string,
+  options?: SpeechOptions,
   onEnd?: () => void,
   onError?: (error: Error) => void
 ): void => {
-  if (!window.speechSynthesis) {
-    if (onError) onError(new Error('Speech synthesis not supported in this browser'));
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
+    if (onError) onError(new Error('Speech synthesis is not supported on this device'));
     return;
   }
-  
-  // Create a new utterance
-  const utterance = new SpeechSynthesisUtterance(text);
-  
-  // Set language
-  utterance.lang = lang;
-  
-  // Find best voice
-  const voice = getBestRussianVoice();
+
+  // Cancel any currently speaking utterance
+  try {
+    window.speechSynthesis.cancel();
+  } catch (e) {
+    // Ignore cancel errors
+  }
+
+  if (!text || !text.trim()) {
+    if (onEnd) onEnd();
+    return;
+  }
+
+  const accent = options?.accent || getPreferredAccent();
+  const rate = options?.rate !== undefined ? options.rate : getPreferredRate();
+  const pitch = options?.pitch !== undefined ? options.pitch : 1.0;
+
+  const utterance = new SpeechSynthesisUtterance(text.trim());
+  utterance.lang = accent;
+  utterance.rate = rate;
+  utterance.pitch = pitch;
+
+  const voice = getBestEnglishVoice(accent);
   if (voice) {
     utterance.voice = voice;
   }
-  
-  // Set event handlers
+
+  let completed = false;
+
   utterance.onend = () => {
-    if (onEnd) onEnd();
+    if (!completed) {
+      completed = true;
+      if (onEnd) onEnd();
+    }
   };
-  
+
   utterance.onerror = (event) => {
-    console.error('Speech synthesis error:', event);
-    if (onError) onError(new Error(`Speech synthesis error: ${event.error}`));
+    if (!completed) {
+      completed = true;
+      // 'interrupted' is common when clicking another button or closing, don't log as fatal
+      if (event.error !== 'interrupted' && event.error !== 'canceled') {
+        console.warn(`Speech synthesis notice: ${event.error}`);
+      }
+      if (onEnd) onEnd();
+    }
   };
-  
-  // Speak the text
+
+  // Safari / iOS keep-alive workaround for long utterances
   window.speechSynthesis.speak(utterance);
 };
 
 /**
- * Checks if speech synthesis is supported in this browser
+ * Check if speech is supported
  */
 export const isSpeechSupported = (): boolean => {
-  return typeof window !== 'undefined' && (
-    'speechSynthesis' in window || audioFilesFetched
-  );
+  return typeof window !== 'undefined' && 'speechSynthesis' in window;
 };
 
 /**
- * Wait for voices to be loaded (workaround for Chrome)
+ * Initialize voices asynchronously (handles Chrome/Android delayed voice list)
  */
 export const initVoices = async (): Promise<void> => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
   const synth = window.speechSynthesis;
-  if (!synth) {
-    return;
-  }
-  
-  // If voices are already loaded
-  if (synth.getVoices().length > 0) {
-    return;
-  }
-  
-  // Resolve as soon as voices load OR after a short fallback timeout
+  if (synth.getVoices().length > 0) return;
+
   await new Promise<void>(resolve => {
     const onVoicesChanged = () => {
       synth.removeEventListener('voiceschanged', onVoicesChanged);
-      clearTimeout(fallbackTimer);
+      clearTimeout(timer);
       resolve();
     };
-    
     synth.addEventListener('voiceschanged', onVoicesChanged);
-    
-    // Fallback timeout in case the event doesn't fire
-    const fallbackTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       synth.removeEventListener('voiceschanged', onVoicesChanged);
       resolve();
-    }, 300);
+    }, 500);
   });
 };
 
-/**
- * Get installation instructions for Russian voices
- */
-export const getRussianVoiceInstallInstructions = (): string => {
-  const userAgent = navigator.userAgent.toLowerCase();
-  
-  if (userAgent.includes('windows')) {
-    return 'To add Russian voices in Windows, go to Settings → Time & Language → Language & Region → Add a language → Russian → Install the language pack.';
-  }
-  
-  if (userAgent.includes('mac os') || userAgent.includes('macintosh')) {
-    return 'To add Russian voices on macOS, go to System Preferences → Accessibility → Spoken Content → System Voice → Customize → Russian → Download the voice.';
-  }
-  
-  if (userAgent.includes('android')) {
-    return 'For Android, go to Settings → Language & Input → Text-to-speech output → Preferred engine settings → Install voice data → Russian.';
-  }
-  
-  if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-    return 'For iOS, go to Settings → Accessibility → Spoken Content → Voices → Russian → Download the voice.';
-  }
-  
-  return 'To add Russian voices, check your device settings for language and speech options, then download a Russian voice pack.';
-};
-
-// Default export
 const browserSpeech = {
-  getRussianVoices,
-  getBestRussianVoice,
-  isRussianVoiceAvailable,
-  speakText,
+  speakEnglishText,
+  getEnglishVoices,
+  getBestEnglishVoice,
+  setPreferredAccent,
+  getPreferredAccent,
+  setPreferredRate,
+  getPreferredRate,
   isSpeechSupported,
   initVoices,
-  getRussianVoiceInstallInstructions
 };
 
 export default browserSpeech;

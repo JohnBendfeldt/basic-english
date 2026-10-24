@@ -8,38 +8,38 @@ import BottomNavigation from './components/BottomNavigation';
 import UserMenu from './components/UserMenu';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
-import russianData from './data/russianData';
+import englishData from './data/englishData';
 import { initVoices, cancelAllSpeech } from './utils/speech';
 
 // Map URL paths to section IDs and SEO metadata
 const SECTION_META: Record<string, { title: string; description: string }> = {
   alphabet: {
-    title: 'Russian Alphabet (Cyrillic) | Basic Russian',
-    description: 'Learn the 33 letters of the Russian alphabet (Cyrillic) with pronunciation guides, audio examples, and transliteration. Free interactive Russian alphabet chart for beginners.',
+    title: 'English Alphabet & Phonics | Basic English',
+    description: 'Learn the 26 letters of the English alphabet with phonics, pronunciation guides, and audio examples. Free interactive English alphabet chart for beginners.',
   },
   phrases: {
-    title: 'Basic Russian Phrases | Basic Russian',
-    description: 'Learn essential Russian phrases for beginners with audio pronunciation. Greetings, introductions, common expressions, and everyday Russian phrases with English translations.',
+    title: 'Basic English Phrases | Basic English',
+    description: 'Learn essential English phrases for beginners with native audio pronunciation. Greetings, introductions, everyday polite expressions, and travel essentials.',
   },
   numbers: {
-    title: 'Russian Numbers | Basic Russian',
-    description: 'Learn Russian numbers with pronunciation and audio. Count in Russian from 1 to 100 and beyond. Free interactive number lessons for beginners.',
+    title: 'English Numbers & Time | Basic English',
+    description: 'Learn English numbers and how to tell time with native audio pronunciation. Count in English from 0 to 100 and beyond. Free interactive number lessons.',
   },
   words: {
-    title: 'Common Russian Words | Basic Russian',
-    description: 'Learn the most common Russian words with audio pronunciation and English translations. Build your Russian vocabulary with essential everyday words for beginners.',
+    title: 'Common English Words | Basic English',
+    description: 'Learn high-frequency English vocabulary with audio pronunciation and contextual definitions. Build your English vocabulary with everyday words.',
   },
   quiz: {
-    title: 'Russian Quiz | Basic Russian',
-    description: 'Test your Russian knowledge with interactive quizzes covering the alphabet, phrases, numbers, and vocabulary. Free Russian language practice for beginners.',
+    title: 'English Quiz | Basic English',
+    description: 'Test your English knowledge with interactive quizzes covering alphabet, phonics, vocabulary, numbers, and everyday phrases. Free English language practice.',
   },
   privacy: {
-    title: 'Privacy Policy | Basic Russian',
-    description: 'Privacy Policy for Basic Russian (basicrussian.org). Learn how we handle your data, quiz progress, and account information with privacy and security.',
+    title: 'Privacy Policy | Basic English',
+    description: 'Privacy Policy for Basic English (basicenglish.school / basicenglish.academy). Learn how we protect your privacy, study progress, and data.',
   },
   terms: {
-    title: 'Terms of Service | Basic Russian',
-    description: 'Terms of Service for Basic Russian (basicrussian.org). Free Russian language learning application terms and guidelines.',
+    title: 'Terms of Service | Basic English',
+    description: 'Terms of Service for Basic English (basicenglish.school / basicenglish.academy). Free English language learning application terms and guidelines.',
   },
 };
 
@@ -195,42 +195,42 @@ const App: React.FC = () => {
     
     switch (activeSection) {
       case 'alphabet':
-        return <Alphabet data={russianData.alphabet} />;
+        return <Alphabet data={englishData.alphabet} />;
       case 'phrases':
         return <Phrases 
-          data={russianData.basicPhrases} 
+          data={englishData.basicPhrases} 
           title="Basic Phrases" 
           contentType="phrases"
         />;
       case 'numbers':
         return <Phrases 
-          data={russianData.numbers} 
-          title="Numbers" 
+          data={englishData.numbers} 
+          title="Numbers & Time" 
           contentType="numbers"
         />;
       case 'words':
         return <Phrases 
-          data={russianData.commonWords} 
+          data={englishData.commonWords} 
           title="Common Words" 
           contentType="words"
         />;
       case 'quiz':
         return <Quiz data={{
-          alphabet: russianData.alphabet.map(item => ({
+          alphabet: englishData.alphabet.map(item => ({
             character: item.letter,
             pronunciation: item.pronunciation,
             example: item.example,
           })),
-          basicPhrases: russianData.basicPhrases,
-          numbers: russianData.numbers,
-          commonWords: russianData.commonWords
+          basicPhrases: englishData.basicPhrases,
+          numbers: englishData.numbers,
+          commonWords: englishData.commonWords
         }} />;
       case 'privacy':
         return <PrivacyPolicy onNavigate={handleSectionChange} />;
       case 'terms':
         return <TermsOfService onNavigate={handleSectionChange} />;
       default:
-        return <Alphabet data={russianData.alphabet} />;
+        return <Alphabet data={englishData.alphabet} />;
     }
   };
 
@@ -239,12 +239,13 @@ const App: React.FC = () => {
       <header>
         <div className="header-content">
           <h1 onClick={() => handleSectionChange('alphabet')} style={{ cursor: 'pointer' }} title="Return to alphabet lessons">
-            <svg className="russia-flag" viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" aria-label="Russian flag" role="img">
-              <rect width="45" height="10" y="0"  fill="#FFFFFF"/>
-              <rect width="45" height="10" y="10" fill="#0039A6"/>
-              <rect width="45" height="10" y="20" fill="#D52B1E"/>
+            <svg className="english-emblem" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Basic English logo" role="img" style={{ width: '28px', height: '28px', marginRight: '8px', verticalAlign: 'middle' }}>
+              <circle cx="18" cy="18" r="17" fill="#4F46E5" stroke="#FFFFFF" strokeWidth="2"/>
+              <path d="M18 9L8 14L18 19L28 14L18 9Z" fill="#FBBF24"/>
+              <path d="M12 16.5V23C12 25 14.5 27 18 27C21.5 27 24 25 24 23V16.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M28 14.5V21" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round"/>
             </svg>
-            Basic Russian
+            Basic English
           </h1>
           <div className="header-actions">
             {installPrompt && (

@@ -22,7 +22,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
         <p className="legal-last-updated">Last Updated: October 16, 2026</p>
 
         <div className="legal-highlight-box">
-          <strong>Plain English Summary:</strong> We believe in privacy by default. Basic Russian is an educational tool. We only collect the minimal information needed to save your quiz progress and learning stats. We never sell your data, we do not run third-party advertising trackers, and you can delete your data at any time.
+          <strong>Plain English Summary:</strong> We believe in privacy by default. Basic English is an educational tool. We only collect the minimal information needed to save your quiz progress and learning stats. We never sell your data, we do not run third-party advertising trackers, and you can delete your data at any time.
         </div>
 
         <h2>1. Information We Collect</h2>
@@ -62,7 +62,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
         <p>You have full control over your personal data:</p>
         <ul>
           <li><strong>Right to Access:</strong> You can view all learning data associated with your account directly in the &quot;My Stats&quot; dashboard.</li>
-          <li><strong>Right to Erasure (Right to be Forgotten):</strong> You may request the permanent deletion of your account and all associated quiz history at any time. To request data deletion, email us at <a href="mailto:dev@basicrussian.org">dev@basicrussian.org</a>, and we will purge your records within 14 business days.</li>
+          <li><strong>Right to Erasure (Right to be Forgotten):</strong> You may request the permanent deletion of your account and all associated quiz history at any time. To request data deletion, email us at <a href="mailto:dev@basicenglish.school">dev@basicenglish.school</a>, and we will purge your records within 14 business days.</li>
           <li><strong>Local Storage Cleansing:</strong> Guest users can erase their local browser history anytime by clearing site cookies and storage in their browser settings.</li>
         </ul>
 
@@ -75,7 +75,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
         </ul>
 
         <h2>6. Children’s Privacy</h2>
-        <p>Basic Russian is designed as a general educational resource. We do not knowingly collect personal data from children under the age of 13. If you believe a child has provided us with personal information, please contact us for immediate removal.</p>
+        <p>Basic English is designed as a general educational resource. We do not knowingly collect personal data from children under the age of 13. If you believe a child has provided us with personal information, please contact us for immediate removal.</p>
 
         <h2>7. Changes to This Policy</h2>
         <p>We may update this Privacy Policy from time to time to reflect improvements to our app. Any updates will be posted here with a revised &quot;Last Updated&quot; date.</p>
@@ -83,10 +83,10 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
         <h2>8. Contact Us</h2>
         <p>If you have any questions or requests regarding your privacy, please contact:</p>
         <p className="legal-contact-block">
-          <strong>Basic Russian</strong><br />
+          <strong>Basic English</strong><br />
           Attn: John Bendfeldt<br />
-          Email: <a href="mailto:dev@basicrussian.org">dev@basicrussian.org</a><br />
-          Website: <a href="https://basicrussian.org">https://basicrussian.org</a>
+          Email: <a href="mailto:dev@basicenglish.school">dev@basicenglish.school</a><br />
+          Website: <a href="https://basicenglish.school">https://basicenglish.school</a>
         </p>
 
         <div className="legal-page-footer">

@@ -6,9 +6,9 @@ describe('App', () => {
     window.history.pushState({}, '', '/');
   });
 
-  test('renders Basic Russian heading', () => {
+  test('renders Basic English heading', () => {
     render(<App />);
-    const headingElement = screen.getByRole('heading', { name: /basic russian/i, level: 1 });
+    const headingElement = screen.getByRole('heading', { name: /basic english/i, level: 1 });
     expect(headingElement).toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(window.location.pathname).toBe('/alphabet');
-      expect(screen.getByRole('heading', { name: /russian alphabet/i, level: 2 })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /english alphabet/i, level: 2 })).toBeInTheDocument();
     });
   });
 });
