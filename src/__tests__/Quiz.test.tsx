@@ -175,6 +175,88 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     expect(screen.getByText('Not quite')).toBeInTheDocument();
     expect(screen.getByText(/The correct answer is:/i)).toBeInTheDocument();
   });
+
+  it('renders dialogue cloze mode with Speaker A and Speaker B bubbles for English phrases and accepts missing word', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Picks isRussianToEnglish: true direction
+    render(<Quiz data={{
+      basicPhrases: [
+        { russian: 'You are welcome', english: 'Standard polite reply to thank you', pronunciation: '/jʊər ˈwɛlkəm/' }
+      ]
+    }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Complete the Dialogue/i)).toBeInTheDocument();
+    });
+
+    // Check Speaker A and Speaker B bubbles
+    expect(screen.getByText(/Thank you so much/i)).toBeInTheDocument();
+    expect(screen.getByText(/You are/i)).toBeInTheDocument();
+
+    const input = screen.getByPlaceholderText(/Your answer here/i);
+    fireEvent.change(input, { target: { value: 'welcome' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
+  });
+
+  it('renders audio dictation mode with Play Audio and Slow buttons for English phrases', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Picks isRussianToEnglish: false direction (Audio Dictation)
+    render(<Quiz data={{
+      basicPhrases: [
+        { russian: 'Good morning', english: 'Polite greeting used from dawn until 12:00 PM', pronunciation: '/ɡʊd ˈmɔːrnɪŋ/' }
+      ]
+    }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Listen & Type/i)).toBeInTheDocument();
+    });
+
+    // Audio controller buttons
+    expect(screen.getByRole('button', { name: /^Play audio$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Play audio slowly/i })).toBeInTheDocument();
+
+    const input = screen.getByPlaceholderText(/Your answer here/i);
+    fireEvent.change(input, { target: { value: 'good morning' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
+  });
+
+  it('accepts cafe order variations like "can i have a coffee please" and "coffee"', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Audio mode
+    render(<Quiz data={{
+      basicPhrases: [
+        { russian: 'I would like a coffee, please', english: 'Ordering a beverage politely at a cafe', pronunciation: '/aɪ wʊd laɪk ə ˈkɒfi pliːz/' }
+      ]
+    }} />);
+
+    const input = await screen.findByRole('textbox');
+    fireEvent.change(input, { target: { value: 'can i have a coffee please' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
+  });
+
+  it('renders English number questions and accepts digit and word spellings', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Digits to Words mode
+    render(<Quiz data={{
+      numbers: [
+        { russian: 'Twelve', english: '12 (a dozen)', pronunciation: '/twɛlv/' }
+      ]
+    }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Number Spelling/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('12')).toBeInTheDocument();
+
+    const input = screen.getByPlaceholderText(/Your answer here/i);
+    fireEvent.change(input, { target: { value: 'twelve' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
+  });
 });
 
 
