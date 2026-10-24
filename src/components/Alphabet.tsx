@@ -16,7 +16,7 @@ interface AlphabetProps {
 const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
   return (
     <div className="section">
-      <h2>Russian Alphabet</h2>
+      <h2>English Alphabet & Phonics</h2>
       <div className="alphabet-container">
         {data.map((item, index) => (
           <div className="alphabet-card" key={index}>

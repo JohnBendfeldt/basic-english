@@ -55,6 +55,8 @@ const isSoftSignAnswer = (answer: string): boolean =>
 const isHardSignAnswer = (answer: string): boolean => 
   ['hard sign', 'hard'].includes(answer.toLowerCase().trim());
 
+const CYRILLIC_QUICK_CHARS = ['я', 'ю', 'ё', 'ж', 'ш', 'щ', 'ч', 'ь', 'ъ', 'ы', 'э'];
+
 const getAudioCategory = (questionType: string): 'alphabet' | 'phrases' | 'numbers' | 'words' | 'examples' => {
   switch (questionType) {
     case 'alphabet':
@@ -73,7 +75,7 @@ const getAudioCategory = (questionType: string): 'alphabet' | 'phrases' | 'numbe
 const Quiz: React.FC<QuizProps> = ({ data }) => {
   // Session Goal: 5, 10, or 20 questions (persisted across sessions)
   const [sessionGoal, setSessionGoal] = useState<number>(() => {
-    const saved = localStorage.getItem('russian_quiz_goal');
+    const saved = localStorage.getItem('english_quiz_goal');
     if (saved) {
       const num = parseInt(saved, 10);
       if ([5, 10, 20].includes(num)) return num;
@@ -99,6 +101,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showNext, setShowNext] = useState(false);
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showPhoneticGuide, setShowPhoneticGuide] = useState(false);
   const correctSoundRef = useRef<HTMLAudioElement | null>(null);
   const incorrectSoundRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +136,13 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       })
       .catch(err => console.warn('Could not load mastered word IDs:', err));
   }, [sessionAnswered]);
+
+  // Ensure view glides to top when quiz completes so user never misses celebration banner
+  useEffect(() => {
+    if (isSessionComplete) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isSessionComplete]);
 
   const normalizeText = (text: string): string => {
     let mainText = text;
@@ -391,56 +401,37 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const item = selected.item as AlphabetItem;
         const character = item.character?.toString() || '';
         const pronunciation = item.pronunciation?.toString() || '';
+        const example = item.example?.toString() || '';
 
-        if (isSoftSign(character)) {
-          setCurrentQuestion({
-            type: 'alphabet',
-            prompt: character,
-            answer: 'soft sign/soft',
-            hint: `What type of sign is "${character}"?`,
-            russian: character,
-            id: selected.id
-          });
-        } else if (isHardSign(character)) {
-          setCurrentQuestion({
-            type: 'alphabet',
-            prompt: character,
-            answer: 'hard sign/hard',
-            hint: `What type of sign is "${character}"?`,
-            russian: character,
-            id: selected.id
-          });
-        } else {
-          setCurrentQuestion({
-            type: 'alphabet',
-            prompt: character,
-            answer: pronunciation.toLowerCase(),
-            hint: `How is the letter "${character}" pronounced in Russian?`,
-            russian: character,
-            id: selected.id
-          });
-        }
+        setCurrentQuestion({
+          type: 'alphabet',
+          prompt: character,
+          answer: (pronunciation || character).toLowerCase(),
+          hint: `Letter sound & phonics: ${pronunciation} (${example})`,
+          russian: character,
+          id: selected.id
+        });
       } else {
         const item = selected.item as PhraseItem;
-        const russian = item.russian?.toString() || '';
-        const english = item.english?.toString() || '';
+        const phrase = item.russian?.toString() || '';
+        const meaning = item.english?.toString() || '';
 
         if (selected.isRussianToEnglish) {
           setCurrentQuestion({
             type: selected.category,
-            prompt: russian,
-            answer: english.toLowerCase(),
+            prompt: phrase,
+            answer: meaning.toLowerCase(),
             hint: 'What does this mean in English?',
-            russian: russian,
+            russian: phrase,
             id: selected.id
           });
         } else {
           setCurrentQuestion({
             type: selected.category,
-            prompt: english,
-            answer: russian.toLowerCase(),
-            hint: 'How do you say this in Russian?',
-            russian: russian,
+            prompt: meaning,
+            answer: phrase.toLowerCase(),
+            hint: 'How do you say this in English?',
+            russian: phrase,
             id: selected.id
           });
         }
@@ -456,9 +447,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       setCurrentQuestion({
         type: 'emergency',
         prompt: 'Hello',
-        answer: 'привет',
-        hint: 'How do you say this in Russian?',
-        russian: 'Привет',
+        answer: 'hello',
+        hint: 'How do you say this in English?',
+        russian: 'Hello',
         id: 'emergency-hello'
       });
     }
@@ -472,6 +463,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const handleCompleteSession = useCallback(async () => {
     setIsSessionComplete(true);
     sessionStatsRef.current.isSaved = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
       await ProgressService.recordQuizSession({
         category: 'mixed',
@@ -484,10 +476,11 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   }, [sessionScore, sessionGoal]);
 
   const startNewQuizSession = useCallback((newGoal?: number) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     const goal = newGoal !== undefined ? newGoal : sessionGoal;
     if (newGoal !== undefined && newGoal !== sessionGoal) {
       setSessionGoal(goal);
-      localStorage.setItem('russian_quiz_goal', goal.toString());
+      localStorage.setItem('english_quiz_goal', goal.toString());
     }
     setSessionIndex(1);
     setSessionScore(0);
@@ -510,13 +503,14 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
   const handleGoalChange = (newGoal: number) => {
     if (newGoal === sessionGoal) return;
-    localStorage.setItem('russian_quiz_goal', newGoal.toString());
+    localStorage.setItem('english_quiz_goal', newGoal.toString());
     setSessionGoal(newGoal);
 
     // If user already reached or exceeded the new goal, finish session right away
     if (sessionAnswered >= newGoal) {
       setIsSessionComplete(true);
       sessionStatsRef.current.isSaved = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       ProgressService.recordQuizSession({
         category: 'mixed',
         score: sessionScore,
@@ -856,9 +850,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     setShowKeyboard(prev => !prev);
   };
 
-  const needsRussianKeyboard = currentQuestion && 
-    !currentQuestion.type.includes('alphabet') && 
-    currentQuestion.hint.includes('How do you say this in Russian');
+  const needsRussianKeyboard = false;
 
   const combinationStarters = ['y', 'Y', 'z', 'Z', 's', 'S', 'c', 'C', 't', 'T', 'k', 'K'];
   const combinationFollowers = {
@@ -898,50 +890,55 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     let recapIcon = null;
 
     if (percentage === 100) {
-      headlineRussian = 'Отлично!';
-      headlinePronunciation = 'Otlichno!';
+      headlineRussian = 'Outstanding!';
+      headlinePronunciation = '';
       headlineEnglish = 'Perfect score! You mastered every question in this session.';
       recapIcon = <FaTrophy className="recap-icon gold" />;
     } else if (percentage >= 80) {
-      headlineRussian = 'Молодец!';
-      headlinePronunciation = 'Molodets!';
-      headlineEnglish = 'Outstanding job! Your Russian skills are getting stronger.';
+      headlineRussian = 'Great Job!';
+      headlinePronunciation = '';
+      headlineEnglish = 'Outstanding job! Your English skills are getting stronger.';
       recapIcon = <FaTrophy className="recap-icon silver" />;
     } else if (percentage >= 60) {
-      headlineRussian = 'Хорошо!';
-      headlinePronunciation = 'Khorosho!';
+      headlineRussian = 'Well Done!';
+      headlinePronunciation = '';
       headlineEnglish = 'Solid progress! A little more practice and you will ace it.';
       recapIcon = <FaStar className="recap-icon bronze" />;
     } else {
-      headlineRussian = 'Повторение — мать учения';
-      headlinePronunciation = 'Povtorenie — mat ucheniya';
-      headlineEnglish = 'Repetition is the mother of learning. Practice makes perfect!';
+      headlineRussian = 'Keep Practicing!';
+      headlinePronunciation = '';
+      headlineEnglish = 'Practice makes perfect. Every question brings you closer!';
       recapIcon = <FaGraduationCap className="recap-icon practice" />;
     }
 
     return (
-      <div className="section quiz-section">
-        <h2>Quiz Session Complete!</h2>
+      <div className="section quiz-section quiz-recap-section">
+        <h2 className="quiz-recap-title">Quiz Session Complete!</h2>
 
         <div className="quiz-card quiz-recap-card">
           <div className="recap-header">
-            {recapIcon}
-            <h3 className="recap-russian-title">{headlineRussian}</h3>
-            {headlinePronunciation && (
-              <p className="recap-pronunciation">
-                Pronunciation: <span className="pronunciation-text">{headlinePronunciation}</span>
-              </p>
-            )}
-            <p className="recap-english-subtitle">{headlineEnglish}</p>
+            <div className="recap-title-row">
+              <span className="recap-icon-inline">{recapIcon}</span>
+              <h3 className="recap-russian-title">{headlineRussian}</h3>
+            </div>
+            <div className="recap-subtitle-row">
+              {headlinePronunciation && (
+                <span className="recap-pronunciation">
+                  Pronunciation: <span className="pronunciation-text">{headlinePronunciation}</span>
+                </span>
+              )}
+              <span className="recap-separator">·</span>
+              <span className="recap-english-subtitle">{headlineEnglish}</span>
+            </div>
           </div>
 
           <div className="recap-score-display">
-            <div className="recap-score-circle">
+            <div className="recap-score-main">
               <span className="recap-score-percent">{percentage}%</span>
               <span className="recap-score-ratio">{sessionScore} / {sessionGoal} correct</span>
             </div>
 
-            <div className="recap-stats-row">
+            <div className="recap-stats-row" role="group" aria-label="Session summary stats">
               <div className="recap-stat-pill">
                 <span className="stat-label">Goal</span>
                 <span className="stat-value">{sessionGoal} Qs</span>
@@ -1002,7 +999,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                     className={`recap-goal-btn ${sessionGoal === count ? 'active' : ''}`}
                     onClick={() => {
                       setSessionGoal(count);
-                      localStorage.setItem('russian_quiz_goal', count.toString());
+                      localStorage.setItem('english_quiz_goal', count.toString());
                     }}
                     title={`Set next quiz to ${count} questions`}
                   >
@@ -1102,11 +1099,11 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       <div className="quiz-card">
         <h3 className="quiz-question-hint">{currentQuestion.hint}</h3>
         <div className="quiz-prompt">
-          {currentQuestion.prompt}
+          <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
           {currentQuestion.type !== 'alphabet' && (
             <PronunciationButton 
               text={currentQuestion.russian}
-              className="margin-left"
+              className="quiz-prompt-audio margin-left"
               audioCategory={getAudioCategory(currentQuestion.type)}
             />
           )}
@@ -1134,10 +1131,56 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           )}
         </div>
 
-        {needsRussianKeyboard && (
-          <div className="transliteration-instructions">
-            <div className="answer-tips">
-              Phonetic mapping: <span className="example-text">ya</span> → <span className="example-result">я</span>, <span className="example-text">zh</span> → <span className="example-result">ж</span>, <span className="example-text">sh</span> → <span className="example-result">ш</span>, <span className="example-text">ch</span> → <span className="example-result">ч</span>
+        {needsRussianKeyboard && !showNext && (
+          <div className="cyrillic-helper-panel">
+            {/* Quick-tap special Russian letters strip */}
+            <div className="cyrillic-quick-bar" role="toolbar" aria-label="Special Russian characters">
+              <span className="quick-bar-label">Special keys:</span>
+              <div className="quick-keys-scroll">
+                {CYRILLIC_QUICK_CHARS.map(char => (
+                  <button
+                    key={char}
+                    type="button"
+                    className="quick-char-btn"
+                    onClick={() => handleKeyboardLetterClick(char)}
+                    aria-label={`Insert ${char}`}
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Collapsible / Low-profile Phonetic Hint Pill */}
+            <div className="phonetic-guide-wrapper">
+              <button
+                type="button"
+                className="phonetic-guide-toggle-btn"
+                onClick={() => setShowPhoneticGuide(prev => !prev)}
+                aria-expanded={showPhoneticGuide}
+                aria-label="Toggle phonetic typing guide"
+              >
+                <span className="guide-summary-text">
+                  💡 Type English sounds (e.g. <strong>ya</strong> → <strong>я</strong>, <strong>zh</strong> → <strong>ж</strong>)
+                </span>
+                <span className="toggle-chevron">{showPhoneticGuide ? '▲' : '▼'}</span>
+              </button>
+
+              {showPhoneticGuide && (
+                <div className="phonetic-expanded-card" role="region" aria-label="Phonetic typing guide">
+                  <div className="phonetic-rules-grid">
+                    <div><code>ya</code> → <strong>я</strong></div>
+                    <div><code>yu</code> → <strong>ю</strong></div>
+                    <div><code>yo</code> → <strong>ё</strong></div>
+                    <div><code>zh</code> → <strong>ж</strong></div>
+                    <div><code>sh</code> → <strong>ш</strong></div>
+                    <div><code>ch</code> → <strong>ч</strong></div>
+                    <div><code>'</code> or <code>`</code> → <strong>ь</strong></div>
+                    <div><code>"</code> → <strong>ъ</strong></div>
+                  </div>
+                  <small className="phonetic-note">Press SPACE or Enter to auto-convert your English typing!</small>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1150,6 +1193,17 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
         {needsRussianKeyboard && showKeyboard && !showNext && (
           <div className="virtual-keyboard-container">
+            <div className="virtual-keyboard-header">
+              <span>Full Russian Keyboard</span>
+              <button 
+                type="button" 
+                className="close-keyboard-btn" 
+                onClick={toggleKeyboard}
+                aria-label="Close keyboard"
+              >
+                ✕ Close
+              </button>
+            </div>
             <RussianKeyboard onLetterClick={handleKeyboardLetterClick} />
           </div>
         )}

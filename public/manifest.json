@@ -1,6 +1,6 @@
 {
-  "short_name": "Basic Russian",
-  "name": "Basic Russian Learning",
+  "short_name": "Basic English",
+  "name": "Basic English Learning",
   "icons": [
     {
       "src": "favicon.ico",
@@ -22,18 +22,18 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#282c34",
+  "theme_color": "#4F46E5",
   "background_color": "#ffffff",
   "orientation": "portrait",
   "categories": ["education", "learning", "languages"],
-  "description": "Learn Basic Russian with interactive exercises",
+  "description": "Learn Basic English online with interactive exercises and audio pronunciation",
   "screenshots": [
     {
       "src": "screenshot1.png",
       "sizes": "1280x720",
       "type": "image/png",
       "platform": "wide",
-      "label": "Russian Alphabet Learning"
+      "label": "English Alphabet & Phonics Learning"
     }
   ]
 }

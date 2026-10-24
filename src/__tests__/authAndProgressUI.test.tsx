@@ -75,38 +75,23 @@ describe('UserMenu Component', () => {
       user_metadata: { full_name: 'Test User' },
       app_metadata: { provider: 'google' }
     };
-    let spy: any;
-    if (supabase) {
-      spy = vi.spyOn(supabase.auth, 'getUser').mockResolvedValue({
-        data: { user: mockUser as any },
-        error: null
-      });
-    }
 
-    try {
-      const onNavigate = vi.fn();
-      render(<UserMenu onNavigate={onNavigate} />);
+    const onNavigate = vi.fn();
+    render(<UserMenu onNavigate={onNavigate} initialUser={mockUser} />);
 
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /user menu for Test User/i })).toBeInTheDocument();
-      });
+    expect(screen.getByRole('button', { name: /user menu for Test User/i })).toBeInTheDocument();
 
-      // Click trigger to open menu
-      fireEvent.click(screen.getByRole('button', { name: /user menu for Test User/i }));
+    // Click trigger to open menu
+    fireEvent.click(screen.getByRole('button', { name: /user menu for Test User/i }));
 
-      // Verify items
-      expect(screen.getByText('My Progress & Stats')).toBeInTheDocument();
-      expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
-      expect(screen.getByText('Terms of Service')).toBeInTheDocument();
+    // Verify items
+    expect(screen.getByText('My Progress & Stats')).toBeInTheDocument();
+    expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
+    expect(screen.getByText('Terms of Service')).toBeInTheDocument();
 
-      // Click Privacy Policy
-      fireEvent.click(screen.getByText('Privacy Policy'));
-      expect(onNavigate).toHaveBeenCalledWith('privacy');
-    } finally {
-      if (spy) {
-        spy.mockRestore();
-      }
-    }
+    // Click Privacy Policy
+    fireEvent.click(screen.getByText('Privacy Policy'));
+    expect(onNavigate).toHaveBeenCalledWith('privacy');
   });
 });
 

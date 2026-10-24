@@ -52,14 +52,14 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
 
     expect(fivePill).toHaveClass('active');
     expect(screen.getByText('of 5')).toBeInTheDocument();
-    expect(localStorage.getItem('russian_quiz_goal')).toBe('5');
+    expect(localStorage.getItem('english_quiz_goal')).toBe('5');
 
     const twentyPill = screen.getByRole('button', { name: '20 Qs' });
     fireEvent.click(twentyPill);
 
     expect(twentyPill).toHaveClass('active');
     expect(screen.getByText('of 20')).toBeInTheDocument();
-    expect(localStorage.getItem('russian_quiz_goal')).toBe('20');
+    expect(localStorage.getItem('english_quiz_goal')).toBe('20');
   });
 
   it('excludes mastered words (masteryLevel >= 5) from active questions', async () => {
@@ -121,7 +121,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     // Now Done screen should be rendered!
     await waitFor(() => {
       expect(screen.getByText('Quiz Session Complete!')).toBeInTheDocument();
-      expect(screen.getByText(/Отлично!/i)).toBeInTheDocument();
+      expect(screen.getByText(/Outstanding!/i)).toBeInTheDocument();
       expect(screen.getByText(/100%/i)).toBeInTheDocument();
       expect(screen.getByText(/5 \/ 5 correct/i)).toBeInTheDocument();
       expect(screen.getByText(/Logged as 1 completed quiz in your learning progress/i)).toBeInTheDocument();
@@ -143,6 +143,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('accepts conversational synonyms and contractions for English phrases (e.g., wheres the restroom for where is the bathroom)', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.2); // Selects 'What does this mean in English?'
     render(<Quiz data={{
       basicPhrases: [
         { english: 'Where is the bathroom', russian: 'Где туалет', pronunciation: 'gdye too-ah-lyet' }
@@ -150,7 +151,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     }} />);
 
     // Wait for question to render
-    const input = await screen.findByPlaceholderText(/Your answer here/i);
+    const input = await screen.findByRole('textbox');
     // User types contraction + synonym "wheres the restroom"
     fireEvent.change(input, { target: { value: 'wheres the restroom' } });
     fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
