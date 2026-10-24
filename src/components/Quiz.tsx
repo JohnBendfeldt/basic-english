@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FaCheck, FaTimes, FaKeyboard, FaTrophy, FaRedo, FaCheckCircle, FaTimesCircle, FaStar, FaGraduationCap } from 'react-icons/fa';
+import { FaCheck, FaTimes, FaKeyboard, FaTrophy, FaRedo, FaCheckCircle, FaTimesCircle, FaStar, FaGraduationCap, FaVolumeUp } from 'react-icons/fa';
 import RussianKeyboard from './RussianKeyboard';
 import PronunciationButton from './PronunciationButton';
 import { transliterate, containsCyrillic } from '../utils/transliteration';
 import { ProgressService } from '../services/progressService';
+import { speak } from '../utils/speech';
 
 // Define interfaces for the data structure
 interface AlphabetItem {
-  character: string;
+  character?: string;
+  letter?: string;
   pronunciation: string;
   example?: string;
   russianWord?: string;
+  englishWord?: string;
 }
 
 interface PhraseItem {
@@ -43,6 +46,246 @@ interface MissedWord {
   category: string;
   russian?: string;
 }
+
+export interface DialogueData {
+  speakerA: string;
+  speakerBPrefix: string;
+  missingWord: string;
+  clozeDisplay: string;
+  speakerBSuffix?: string;
+  contextHint?: string;
+}
+
+// Conversational real-life dialogues for English Phrases
+const CONVERSATIONAL_DIALOGUES: Record<string, {
+  speakerA: string;
+  speakerBPrefix: string;
+  missingWord: string;
+  speakerBSuffix?: string;
+  contextHint?: string;
+}> = {
+  'hello': {
+    speakerA: 'Good morning! Welcome to Basic English.',
+    speakerBPrefix: '',
+    missingWord: 'Hello',
+    speakerBSuffix: ', thank you!',
+    contextHint: 'Friendly greeting'
+  },
+  'good morning': {
+    speakerA: 'Rise and shine, the clock says 8:00 AM!',
+    speakerBPrefix: 'Good',
+    missingWord: 'morning',
+    speakerBSuffix: '!',
+    contextHint: 'Morning greeting (before 12 PM)'
+  },
+  'good afternoon': {
+    speakerA: 'Welcome everyone, it is 1:30 PM.',
+    speakerBPrefix: 'Good',
+    missingWord: 'afternoon',
+    speakerBSuffix: '!',
+    contextHint: 'Afternoon greeting (12 PM to 5 PM)'
+  },
+  'good evening': {
+    speakerA: 'Welcome to our dinner event at 7:00 PM.',
+    speakerBPrefix: 'Good',
+    missingWord: 'evening',
+    speakerBSuffix: '!',
+    contextHint: 'Evening greeting (after 6 PM)'
+  },
+  'how are you': {
+    speakerA: 'Hi Sarah, wonderful to see you today!',
+    speakerBPrefix: 'How are',
+    missingWord: 'you',
+    speakerBSuffix: '?',
+    contextHint: 'Asking about someone\'s well-being'
+  },
+  'nice to meet you': {
+    speakerA: 'Hello, I am Alex from Toronto.',
+    speakerBPrefix: 'Nice to meet',
+    missingWord: 'you',
+    speakerBSuffix: '!',
+    contextHint: 'Meeting someone for the first time'
+  },
+  'what is your name': {
+    speakerA: 'Hi! I am new in class today.',
+    speakerBPrefix: 'What is your',
+    missingWord: 'name',
+    speakerBSuffix: '?',
+    contextHint: 'Asking someone\'s name'
+  },
+  'my name is': {
+    speakerA: 'Hello! What is your name?',
+    speakerBPrefix: 'My name',
+    missingWord: 'is',
+    speakerBSuffix: ' Alex.',
+    contextHint: 'Introducing yourself'
+  },
+  'goodbye': {
+    speakerA: 'It was great talking to you. See you tomorrow!',
+    speakerBPrefix: 'Good',
+    missingWord: 'bye',
+    speakerBSuffix: ', take care!',
+    contextHint: 'Farewell'
+  },
+  'have a great day': {
+    speakerA: 'I am heading out for work now.',
+    speakerBPrefix: 'Have a great',
+    missingWord: 'day',
+    speakerBSuffix: '!',
+    contextHint: 'Warm closing remark'
+  },
+  'please': {
+    speakerA: 'Can I get you something to drink?',
+    speakerBPrefix: 'A glass of water,',
+    missingWord: 'please',
+    speakerBSuffix: '.',
+    contextHint: 'Essential courtesy word'
+  },
+  'thank you very much': {
+    speakerA: 'Here are the flight tickets and boarding passes.',
+    speakerBPrefix: 'Thank you very',
+    missingWord: 'much',
+    speakerBSuffix: '!',
+    contextHint: 'Expressing sincere gratitude'
+  },
+  'you are welcome': {
+    speakerA: 'Thank you so much for your kind help!',
+    speakerBPrefix: 'You are',
+    missingWord: 'welcome',
+    speakerBSuffix: '!',
+    contextHint: 'Polite reply to thank you'
+  },
+  'excuse me': {
+    speakerA: '(Someone is standing directly in front of the door)',
+    speakerBPrefix: 'Excuse',
+    missingWord: 'me',
+    speakerBSuffix: ', may I pass please?',
+    contextHint: 'Getting attention politely or passing by'
+  },
+  'i am sorry': {
+    speakerA: 'Oh, you accidentally bumped my shoulder!',
+    speakerBPrefix: 'I am so',
+    missingWord: 'sorry',
+    speakerBSuffix: '!',
+    contextHint: 'Apologizing for an accident'
+  },
+  'yes': {
+    speakerA: 'Would you like milk and sugar in your tea?',
+    speakerBPrefix: '',
+    missingWord: 'Yes',
+    speakerBSuffix: ', please!',
+    contextHint: 'Affirmative response'
+  },
+  'no': {
+    speakerA: 'Do you need any extra plastic bags today?',
+    speakerBPrefix: '',
+    missingWord: 'No',
+    speakerBSuffix: ', thank you.',
+    contextHint: 'Negative response'
+  },
+  'where is the restroom': {
+    speakerA: '(At a restaurant or cafe after lunch)',
+    speakerBPrefix: 'Excuse me, where is the',
+    missingWord: 'restroom',
+    speakerBSuffix: '?',
+    contextHint: 'Asking for the toilet / bathroom'
+  },
+  'where is the bus stop': {
+    speakerA: 'I need to catch bus #42 to the train station.',
+    speakerBPrefix: 'Excuse me, where is the bus',
+    missingWord: 'stop',
+    speakerBSuffix: '?',
+    contextHint: 'Asking for public transit'
+  },
+  'how do i get to the airport': {
+    speakerA: 'My flight boards in two hours!',
+    speakerBPrefix: 'How do I get to the',
+    missingWord: 'airport',
+    speakerBSuffix: '?',
+    contextHint: 'Asking directions to airport'
+  },
+  'is it far from here': {
+    speakerA: 'The city art museum is over on 8th Street.',
+    speakerBPrefix: 'Is it far',
+    missingWord: 'from',
+    speakerBSuffix: ' here?',
+    contextHint: 'Inquiring about walking distance'
+  },
+  'can i have the check please': {
+    speakerA: 'Server: Did you enjoy your meal this evening?',
+    speakerBPrefix: 'Yes, can I have the',
+    missingWord: 'check',
+    speakerBSuffix: ', please?',
+    contextHint: 'Asking for the restaurant bill'
+  },
+  'i would like a coffee please': {
+    speakerA: 'Barista: Welcome to the cafe! What can I make for you?',
+    speakerBPrefix: 'I would like a',
+    missingWord: 'coffee',
+    speakerBSuffix: ', please.',
+    contextHint: 'Ordering a beverage at a cafe'
+  },
+  'a bottle of water please': {
+    speakerA: 'Flight attendant: Would you like a beverage?',
+    speakerBPrefix: 'A bottle of',
+    missingWord: 'water',
+    speakerBSuffix: ', please.',
+    contextHint: 'Ordering bottled water'
+  },
+  'how much does this cost': {
+    speakerA: 'Shopper holding a jacket with no price tag.',
+    speakerBPrefix: 'Excuse me, how much does this',
+    missingWord: 'cost',
+    speakerBSuffix: '?',
+    contextHint: 'Asking the price of an item'
+  },
+  'do you speak english': {
+    speakerA: 'Traveler arriving at a train station in Europe.',
+    speakerBPrefix: 'Pardon me, do you speak',
+    missingWord: 'english',
+    speakerBSuffix: '?',
+    contextHint: 'Asking if someone speaks English'
+  },
+  'could you speak slower please': {
+    speakerA: 'The tour guide is talking very rapidly.',
+    speakerBPrefix: 'Could you speak',
+    missingWord: 'slower',
+    speakerBSuffix: ', please?',
+    contextHint: 'Requesting slower speech'
+  },
+  'i do not understand': {
+    speakerA: 'The transit announcement was muffled.',
+    speakerBPrefix: 'I am sorry, I do not',
+    missingWord: 'understand',
+    speakerBSuffix: '.',
+    contextHint: 'Asking for clarification'
+  },
+  'could you repeat that please': {
+    speakerA: 'A loud train just passed by while you were speaking.',
+    speakerBPrefix: 'Could you repeat that,',
+    missingWord: 'please',
+    speakerBSuffix: '?',
+    contextHint: 'Asking someone to say something again'
+  },
+  'can you help me': {
+    speakerA: 'You are struggling to lift your heavy suitcase.',
+    speakerBPrefix: 'Excuse me, can you',
+    missingWord: 'help',
+    speakerBSuffix: ' me?',
+    contextHint: 'Asking for assistance'
+  }
+};
+
+const findDialogue = (phrase: string) => {
+  const norm = phrase.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (CONVERSATIONAL_DIALOGUES[norm]) return CONVERSATIONAL_DIALOGUES[norm];
+  for (const [key, val] of Object.entries(CONVERSATIONAL_DIALOGUES)) {
+    if (norm.includes(key) || key.includes(norm)) {
+      return val;
+    }
+  }
+  return null;
+};
 
 // Constants for special characters
 const SOFT_SIGN_CHARS = ['Ь', 'ь'];
@@ -350,6 +593,25 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     ((data?.numbers?.length || 0) * 2) +
     ((data?.commonWords?.length || 0) * 2);
 
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  const playAudio = useCallback((textToSpeak: string, rate: number = 0.92) => {
+    if (!textToSpeak) return;
+    setIsPlayingAudio(true);
+    try {
+      speak(
+        textToSpeak,
+        'en-US',
+        'quiz-audio-controller',
+        () => setIsPlayingAudio(false),
+        () => setIsPlayingAudio(false),
+        { rate }
+      );
+    } catch (err) {
+      setIsPlayingAudio(false);
+    }
+  }, []);
+
   const getRandomQuestion = useCallback((overrideMastered?: Set<string>) => {
     setUserAnswer('');
     setIsCorrect(null);
@@ -399,61 +661,116 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
       if (selected.category === 'alphabet') {
         const item = selected.item as AlphabetItem;
-        const character = item.character?.toString() || '';
+        const character = (item as any).character || (item as any).letter || '';
         const pronunciation = item.pronunciation?.toString() || '';
         const example = item.example?.toString() || '';
 
-        // Extract example words (e.g. "as in Cat, Car" -> ["cat", "car"])
-        const exampleWords = example
-          .replace(/^as in\s+/i, '')
-          .split(/[,/&]/)
-          .map(w => w.trim().toLowerCase())
-          .filter(w => w.length > 0);
+        // If Cyrillic letter (e.g. from Russian app test suite), preserve exact test expectation
+        if (containsCyrillic(character)) {
+          const validAnswers = [pronunciation.toLowerCase(), character.toLowerCase()];
+          setCurrentQuestion({
+            type: 'alphabet',
+            prompt: character,
+            answer: validAnswers.join(' / '),
+            hint: pronunciation ? `What sound does this letter make? (${pronunciation})` : 'Type this letter:',
+            russian: character,
+            id: selected.id
+          });
+        } else {
+          // English alphabet (A-Z)
+          const exampleWords = example
+            .replace(/^as in\s+/i, '')
+            .split(/[,/&]/)
+            .map(w => w.trim().toLowerCase())
+            .filter(w => w.length > 0);
 
-        const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
-        if (pronunciation && !pronunciation.includes('/')) {
-          validAnswers.push(pronunciation.toLowerCase());
+          const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
+          if (pronunciation && !pronunciation.includes('/')) {
+            validAnswers.push(pronunciation.toLowerCase());
+          }
+
+          const primaryExample = exampleWords[0] || 'apple';
+
+          if (selected.isRussianToEnglish) {
+            // Phonics Listen & Type Mode
+            setCurrentQuestion({
+              type: 'alphabet',
+              prompt: `🎧 Letter Sound: "${character}"`,
+              answer: validAnswers.join(' / '),
+              hint: `Listen to the phonics sound and type the letter (${character}) or example word (${primaryExample}):`,
+              russian: character,
+              id: selected.id,
+              badge: '🎧 Phonics & Sound',
+              isAudioMode: true,
+              audioText: `${primaryExample}. Letter ${character}.`
+            });
+          } else {
+            // Visual Letter Phonics
+            setCurrentQuestion({
+              type: 'alphabet',
+              prompt: character,
+              answer: validAnswers.join(' / '),
+              hint: `Phonics sound: ${pronunciation} — Type letter (${character}) or example word (${primaryExample}):`,
+              russian: character,
+              id: selected.id,
+              badge: '🔤 Alphabet Phonics',
+              audioText: `${character}. as in ${primaryExample}`
+            });
+          }
         }
-
-        setCurrentQuestion({
-          type: 'alphabet',
-          prompt: character,
-          answer: validAnswers.join(' / '),
-          hint: pronunciation 
-            ? `Letter Sound & Phonics: ${pronunciation} (${example})` 
-            : `Alphabet Letter: ${character}`,
-          placeholder: `Type letter (${character}) or example word (${exampleWords[0] || 'word'})`,
-          russian: character,
-          id: selected.id
-        });
       } else if (selected.category === 'numbers') {
         const item = selected.item as PhraseItem;
         const wordForm = item.russian?.toString() || '';
         const digitRaw = item.english?.toString() || '';
         const digitsOnly = digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw;
 
-        if (selected.isRussianToEnglish) {
-          // Word to digits
-          setCurrentQuestion({
-            type: selected.category,
-            prompt: wordForm,
-            answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
-            hint: 'Type this number in digits (or words):',
-            placeholder: `e.g. ${digitsOnly}`,
-            russian: wordForm,
-            id: selected.id
-          });
+        if (containsCyrillic(wordForm)) {
+          if (selected.isRussianToEnglish) {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: wordForm,
+              answer: digitsOnly,
+              hint: 'Type this number in digits:',
+              russian: wordForm,
+              id: selected.id
+            });
+          } else {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: digitsOnly,
+              answer: wordForm.toLowerCase(),
+              hint: 'How do you say this number in Russian?',
+              russian: wordForm,
+              id: selected.id
+            });
+          }
         } else {
-          // Digits to words
-          setCurrentQuestion({
-            type: selected.category,
-            prompt: digitsOnly,
-            answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
-            hint: 'Spell this number in English words:',
-            placeholder: `e.g. ${wordForm.toLowerCase()}`,
-            russian: wordForm,
-            id: selected.id
-          });
+          // English numbers
+          if (selected.isRussianToEnglish) {
+            // Words to Digits
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: wordForm,
+              answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
+              hint: `Type this number in digits (e.g. ${digitsOnly}):`,
+              russian: wordForm,
+              id: selected.id,
+              badge: '🔢 Digits',
+              audioText: wordForm
+            });
+          } else {
+            // Digits to English Words
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: digitsOnly,
+              answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
+              hint: `Spell this number in English words (${wordForm.length} letters):`,
+              russian: wordForm,
+              id: selected.id,
+              badge: '🔢 Number Spelling',
+              audioText: wordForm
+            });
+          }
         }
       } else if (selected.category === 'basicPhrases') {
         const item = selected.item as PhraseItem;
@@ -484,44 +801,75 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         } else {
           // English learning app data
           if (selected.isRussianToEnglish) {
-            // Phrase cloze completion
-            const words = phrase.split(' ');
-            let clozePrompt = phrase;
-            let clozeAnswer = phrase.toLowerCase();
-            let letterCountNotice = '';
-            
-            if (words.length >= 2) {
-              const rawLastWord = words[words.length - 1];
-              const cleanLastWord = rawLastWord.replace(/[.,!?;:]/g, '');
-              const startWords = words.slice(0, -1).join(' ');
-              const punctuation = rawLastWord.match(/[.,!?;:]+$/)?.[0] || '';
+            // Conversational Dialogue Cloze Completion
+            const dialogue = findDialogue(phrase);
+            if (dialogue) {
+              const cleanMissing = dialogue.missingWord.replace(/[.,!?;:]/g, '');
+              const firstLetter = cleanMissing.charAt(0);
+              const slots = '_'.repeat(Math.max(1, cleanMissing.length - 1));
+              const clozeDisplay = `${firstLetter}${slots}`;
 
-              // Exact underscore count matching the missing word length!
-              const slots = '_'.repeat(cleanLastWord.length);
-              clozePrompt = `${startWords} ${slots}${punctuation}`;
-              clozeAnswer = `${cleanLastWord.toLowerCase()} / ${phrase.toLowerCase()}`;
-              letterCountNotice = ` • ${cleanLastWord.length} letters`;
+              setCurrentQuestion({
+                type: selected.category,
+                prompt: `A: "${dialogue.speakerA}" | B: "${dialogue.speakerBPrefix} ${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
+                answer: `${cleanMissing.toLowerCase()} / ${phrase.toLowerCase()}`,
+                hint: `Complete Speaker B's reply (${cleanMissing.length} letters):`,
+                russian: phrase,
+                id: selected.id,
+                badge: '💬 Complete the Dialogue',
+                audioText: phrase,
+                dialogue: {
+                  speakerA: dialogue.speakerA,
+                  speakerBPrefix: dialogue.speakerBPrefix,
+                  clozeDisplay,
+                  speakerBSuffix: dialogue.speakerBSuffix,
+                  missingWord: cleanMissing,
+                  contextHint: dialogue.contextHint
+                }
+              });
+            } else {
+              // Dynamic cloze on last word
+              const words = phrase.split(' ');
+              let clozePrompt = phrase;
+              let clozeAnswer = phrase.toLowerCase();
+              let letterNotice = '';
+
+              if (words.length >= 2) {
+                const rawLast = words[words.length - 1];
+                const cleanLast = rawLast.replace(/[.,!?;:]/g, '');
+                const punctuation = rawLast.match(/[.,!?;:]+$/)?.[0] || '';
+                const startWords = words.slice(0, -1).join(' ');
+                const firstLetter = cleanLast.charAt(0);
+                const slots = '_'.repeat(Math.max(1, cleanLast.length - 1));
+                clozePrompt = `${startWords} ${firstLetter}${slots}${punctuation}`;
+                clozeAnswer = `${cleanLast.toLowerCase()} / ${phrase.toLowerCase()}`;
+                letterNotice = ` • ${cleanLast.length} letters`;
+              }
+
+              setCurrentQuestion({
+                type: selected.category,
+                prompt: clozePrompt,
+                answer: clozeAnswer,
+                hint: `Complete the phrase (${situation}${letterNotice}):`,
+                russian: phrase,
+                id: selected.id,
+                badge: '💬 Complete the Phrase',
+                audioText: phrase
+              });
             }
-
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: clozePrompt,
-              answer: clozeAnswer,
-              hint: `Complete the phrase (${situation}${letterCountNotice}):`,
-              placeholder: 'Type missing word or full phrase...',
-              russian: phrase,
-              id: selected.id
-            });
           } else {
-            // Conversational scenario
+            // Listen & Type Audio Dictation Mode
+            const wordCount = phrase.trim().split(/\s+/).length;
             setCurrentQuestion({
               type: selected.category,
-              prompt: situation,
+              prompt: '🎧 Listen carefully and type what you hear',
               answer: phrase.toLowerCase(),
-              hint: 'How do you say this politely in English?',
-              placeholder: `e.g. ${phrase}`,
+              hint: `Audio Dictation • ${wordCount} words • Type what you hear:`,
               russian: phrase,
-              id: selected.id
+              id: selected.id,
+              badge: '🎧 Listen & Type',
+              isAudioMode: true,
+              audioText: phrase
             });
           }
         }
@@ -552,27 +900,40 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             });
           }
         } else {
+          // English vocabulary
+          const cleanWord = word.trim();
+          const validTargets = [cleanWord.toLowerCase()];
+          if (cleanWord.toLowerCase().startsWith('to ')) {
+            validTargets.push(cleanWord.slice(3).toLowerCase());
+          }
+          const targetAnswer = validTargets.join(' / ');
+          const firstLetter = cleanWord.charAt(0).toUpperCase();
+
           if (selected.isRussianToEnglish) {
+            // Mode: Listen & Type Audio Dictation
             setCurrentQuestion({
               type: selected.category,
-              prompt: word,
-              answer: word.toLowerCase(),
-              hint: `Vocabulary Word (${definition}) — Practice spelling:`,
-              placeholder: `Type '${word.toLowerCase()}'`,
-              russian: word,
-              id: selected.id
+              prompt: '🎧 Listen and spell the word',
+              answer: targetAnswer,
+              hint: `Audio Dictation • Starts with "${firstLetter}" • ${cleanWord.length} letters:`,
+              russian: cleanWord,
+              id: selected.id,
+              badge: '🎧 Listen & Type',
+              isAudioMode: true,
+              audioText: cleanWord
             });
           } else {
-            const firstLetter = word.charAt(0).toUpperCase();
-            const slots = '_'.repeat(Math.max(1, word.length - 1));
+            // Mode: Meaning and First-Letter Cloze Scaffold
+            const slots = '_'.repeat(Math.max(1, cleanWord.length - 1));
             setCurrentQuestion({
               type: selected.category,
               prompt: definition,
-              answer: word.toLowerCase(),
-              hint: `What is the English word? (${firstLetter}${slots} • ${word.length} letters):`,
-              placeholder: `Type word starting with ${firstLetter}...`,
-              russian: word,
-              id: selected.id
+              answer: targetAnswer,
+              hint: `What is the English word? (${firstLetter}${slots} • ${cleanWord.length} letters):`,
+              russian: cleanWord,
+              id: selected.id,
+              badge: '📖 Vocabulary & Spelling',
+              audioText: cleanWord
             });
           }
         }
@@ -741,7 +1102,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const u = normalizeEnglishPhrase(user);
         const t = normalizeEnglishPhrase(target);
 
-        // Cafe & restaurant beverage orders (e.g. "may i please have a coffee" <=> "i would like a coffee, please")
+        // Cafe & restaurant beverage orders (e.g. "may i please have a coffee" <=> "i would like a coffee, please" <=> "coffee")
         const coffeePhrases = [
           'i would like a coffee please',
           'i would like a coffee',
@@ -760,11 +1121,28 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           'could i get a coffee please',
           'could i get a coffee',
           'a coffee please',
-          'coffee please'
+          'coffee please',
+          'a coffee',
+          'coffee'
         ];
         const isUserCoffee = coffeePhrases.some(p => normalizeEnglishPhrase(p) === u);
         const isTargetCoffee = coffeePhrases.some(p => normalizeEnglishPhrase(p) === t);
         if (isUserCoffee && isTargetCoffee) {
+          return true;
+        }
+
+        // Bottled water requests
+        const waterPhrases = [
+          'a bottle of water please',
+          'a bottle of water',
+          'bottle of water please',
+          'bottle of water',
+          'water please',
+          'water'
+        ];
+        const isUserWater = waterPhrases.some(p => normalizeEnglishPhrase(p) === u);
+        const isTargetWater = waterPhrases.some(p => normalizeEnglishPhrase(p) === t);
+        if (isUserWater && isTargetWater) {
           return true;
         }
 
@@ -777,7 +1155,10 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           'where is bathroom',
           'wheres the restroom',
           'wheres the bathroom',
-          'wheres the toilet'
+          'wheres the toilet',
+          'restroom',
+          'bathroom',
+          'toilet'
         ];
         const isUserRestroom = restroomPhrases.some(p => normalizeEnglishPhrase(p) === u);
         const isTargetRestroom = restroomPhrases.some(p => normalizeEnglishPhrase(p) === t);
@@ -792,11 +1173,30 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           'bill please',
           'the bill please',
           'could i have the check please',
-          'could i have the bill please'
+          'could i have the bill please',
+          'can i have the check please',
+          'can i have the bill please',
+          'check',
+          'bill'
         ];
         const isUserBill = billPhrases.some(p => normalizeEnglishPhrase(p) === u);
         const isTargetBill = billPhrases.some(p => normalizeEnglishPhrase(p) === t);
         if (isUserBill && isTargetBill) {
+          return true;
+        }
+
+        // Welcome / polite responses
+        const welcomePhrases = [
+          'you are welcome',
+          'youre welcome',
+          'welcome',
+          'no problem',
+          'not at all',
+          'my pleasure'
+        ];
+        const isUserWelcome = welcomePhrases.some(p => normalizeEnglishPhrase(p) === u);
+        const isTargetWelcome = welcomePhrases.some(p => normalizeEnglishPhrase(p) === t);
+        if (isUserWelcome && isTargetWelcome) {
           return true;
         }
 
@@ -1317,17 +1717,72 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       </div>
 
       <div className="quiz-card">
+        {/* Category & Mode Badge */}
+        {currentQuestion.badge && (
+          <div className="quiz-mode-pill-container">
+            <span className="quiz-mode-pill">{currentQuestion.badge}</span>
+          </div>
+        )}
+
         <h3 className="quiz-question-hint">{currentQuestion.hint}</h3>
-        <div className="quiz-prompt">
-          <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
-          {currentQuestion.type !== 'alphabet' && (
-            <PronunciationButton 
-              text={currentQuestion.russian}
-              className="quiz-prompt-audio margin-left"
-              audioCategory={getAudioCategory(currentQuestion.type)}
-            />
-          )}
-        </div>
+
+        {/* Dialogue Cloze Card if Dialogue Mode */}
+        {currentQuestion.dialogue ? (
+          <div className="quiz-dialogue-card" role="region" aria-label="Conversation dialogue">
+            <div className="dialogue-bubble speaker-a">
+              <span className="dialogue-avatar" aria-hidden="true">A</span>
+              <div className="dialogue-content">
+                <span className="dialogue-text">"{currentQuestion.dialogue.speakerA}"</span>
+              </div>
+            </div>
+            <div className="dialogue-bubble speaker-b">
+              <span className="dialogue-avatar" aria-hidden="true">B</span>
+              <div className="dialogue-content">
+                <span className="dialogue-text">
+                  {currentQuestion.dialogue.speakerBPrefix}{' '}
+                  <strong className="dialogue-cloze-target">{currentQuestion.dialogue.clozeDisplay}</strong>
+                  {currentQuestion.dialogue.speakerBSuffix || ''}
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="quiz-prompt">
+            <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
+            {currentQuestion.type !== 'alphabet' && currentQuestion.russian && !currentQuestion.isAudioMode && (
+              <PronunciationButton 
+                text={currentQuestion.russian}
+                className="quiz-prompt-audio margin-left"
+                audioCategory={getAudioCategory(currentQuestion.type)}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Dedicated Audio Controller for Audio Mode or Spoken English Prompts */}
+        {(currentQuestion.isAudioMode || currentQuestion.audioText || (currentQuestion.russian && !containsCyrillic(currentQuestion.russian))) && (
+          <div className="quiz-audio-controller" role="toolbar" aria-label="Audio controls">
+            <button
+              type="button"
+              className={`quiz-audio-btn primary ${isPlayingAudio ? 'playing' : ''}`}
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.russian, 0.92)}
+              aria-label="Play audio"
+            >
+              <FaVolumeUp className={isPlayingAudio ? "pulse-animation" : ""} />
+              <span>{isPlayingAudio ? "Speaking..." : "Play Audio"}</span>
+            </button>
+            <button
+              type="button"
+              className="quiz-audio-btn slow"
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.russian, 0.72)}
+              aria-label="Play audio slowly at 0.7x speed"
+              title="Listen at slower 0.7x speed"
+            >
+              <span className="slow-icon" aria-hidden="true">🐢</span>
+              <span>Slow (0.7x)</span>
+            </button>
+          </div>
+        )}
         <div className="input-container">
           <input
             ref={inputRef}
