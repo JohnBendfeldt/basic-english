@@ -1,0 +1,53 @@
+{
+  "name": "russian-learning-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.10.1",
+    "web-vitals": "^3.5.2"
+  },
+  "overrides": {
+    "serialize-javascript": "7.1.2",
+    "qs": "6.16.0"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "vite preview",
+    "dev-server": "node src/dev-server.js",
+    "dev": "concurrently --kill-others-on-fail \"npm run dev-server\" \"npm run start\"",
+    "generate-audio": "node scripts/generate-audio-placeholders.cjs"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.2.57",
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.7.0",
+    "body-parser": "^1.20.3",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsdom": "^26.1.0",
+    "typescript": "^4.9.5",
+    "vite": "^6.4.1",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^5.0.3"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "fsevents": true
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}
