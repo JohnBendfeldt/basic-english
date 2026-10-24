@@ -1,75 +1,157 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
+    <!-- Background Gradient -->
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4a5af4"/>
-      <stop offset="100%" style="stop-color:#2c3584"/>
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="45%" style="stop-color:#1e1b4b"/>
+      <stop offset="100%" style="stop-color:#312e81"/>
     </linearGradient>
+
+    <!-- Glowing Orb Gradients -->
+    <radialGradient id="indigoGlow" cx="20%" cy="25%" r="60%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.35"/>
+      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="amberGlow" cx="85%" cy="75%" r="55%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- Accent Gradient -->
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#4a5af4"/>
-      <stop offset="100%" style="stop-color:#ff526c"/>
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="50%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
     </linearGradient>
-    <!-- Subtle grid pattern -->
-    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+
+    <!-- Gold Badge Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+
+    <!-- Subtle Grid Pattern -->
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(255,255,255,0.035)" stroke-width="1"/>
     </pattern>
   </defs>
 
-  <!-- Background -->
-  <rect width="1200" height="630" fill="#3b44c4"/>
+  <!-- Background Base -->
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#grid)"/>
 
-  <!-- Russian flag stripe accent - top -->
-  <rect x="0" y="0" width="1200" height="5" fill="#ffffff" opacity="0.9"/>
-  <rect x="0" y="5" width="1200" height="5" fill="#4a5af4" opacity="0.9"/>
-  <rect x="0" y="10" width="1200" height="5" fill="#ff526c" opacity="0.9"/>
+  <!-- Glowing Atmospheric Orbs -->
+  <rect width="1200" height="630" fill="url(#indigoGlow)"/>
+  <rect width="1200" height="630" fill="url(#amberGlow)"/>
 
-  <!-- Russian flag stripe accent - bottom -->
-  <rect x="0" y="615" width="1200" height="5" fill="#ff526c" opacity="0.9"/>
-  <rect x="0" y="620" width="1200" height="5" fill="#4a5af4" opacity="0.9"/>
-  <rect x="0" y="625" width="1200" height="5" fill="#ffffff" opacity="0.9"/>
+  <!-- Top Decorative Accent Strip -->
+  <rect x="0" y="0" width="1200" height="6" fill="url(#accent)"/>
 
-  <!-- Left column: branding -->
-  <!-- BR monogram -->
-  <text x="80" y="220" font-family="Georgia, serif" font-size="180" font-weight="bold" fill="white" opacity="0.15">BR</text>
+  <!-- Bottom Accent Strip -->
+  <rect x="0" y="624" width="1200" height="6" fill="url(#accent)"/>
 
-  <!-- Russian flag (3:2 ratio, 90×60) -->
-  <rect x="80" y="235" width="90" height="20" fill="#ffffff"/>
-  <rect x="80" y="255" width="90" height="20" fill="#1a2bbf"/>
-  <rect x="80" y="275" width="90" height="20" fill="#ff526c"/>
-  <rect x="80" y="235" width="90" height="60" fill="none" stroke="white" stroke-opacity="0.25" stroke-width="1.5"/>
+  <!-- Left Column: Branding & Features -->
+  <!-- School Crest Emblem (68x68) -->
+  <g transform="translate(80, 80)">
+    <circle cx="34" cy="34" r="34" fill="#4f46e5" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+    <circle cx="34" cy="34" r="30" fill="#3730a3"/>
+    <!-- Graduation Cap -->
+    <path d="M34 16 L14 26 L34 36 L54 26 Z" fill="url(#goldGrad)"/>
+    <path d="M22 31.5 V43 C22 47 27 50 34 50 C41 50 46 47 46 43 V31.5" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M54 27 V40" stroke="url(#goldGrad)" stroke-width="3" stroke-linecap="round"/>
+  </g>
 
-  <!-- App name -->
-  <text x="80" y="400" font-family="Georgia, 'Times New Roman', serif" font-size="80" font-weight="bold" fill="white" letter-spacing="-1">Basic Russian</text>
+  <!-- Domain Badge -->
+  <rect x="170" y="93" width="220" height="42" rx="21" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <text x="280" y="120" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="19" font-weight="600" fill="#fde047" text-anchor="middle" letter-spacing="0.5">basicenglish.school</text>
+
+  <!-- App Title -->
+  <text x="80" y="235" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif" font-size="82" font-weight="900" fill="#ffffff" letter-spacing="-1.5">
+    Basic English
+  </text>
 
   <!-- Tagline -->
-  <text x="83" y="458" font-family="'Helvetica Neue', Arial, sans-serif" font-size="32" fill="white" opacity="0.80" letter-spacing="1">Free online Russian for beginners</text>
+  <text x="83" y="295" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="32" font-weight="500" fill="#cbd5e1" letter-spacing="0.3">
+    Free Online English for Beginners
+  </text>
 
-  <!-- Underline accent -->
-  <rect x="80" y="476" width="570" height="4" rx="2" fill="url(#accent)"/>
+  <!-- Underline Accent Bar -->
+  <rect x="80" y="325" width="560" height="5" rx="2.5" fill="url(#accent)"/>
 
-  <!-- Feature pills -->
-  <rect x="80" y="510" width="148" height="44" rx="22" fill="white" opacity="0.15"/>
-  <text x="154" y="538" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">Alphabet</text>
+  <!-- Subtitle Description -->
+  <text x="83" y="375" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="21" fill="#94a3b8" font-weight="400">
+    Master alphabet phonics, essential vocabulary, and everyday phrases.
+  </text>
 
-  <rect x="244" y="510" width="140" height="44" rx="22" fill="white" opacity="0.15"/>
-  <text x="314" y="538" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">Phrases</text>
+  <!-- Feature Pills (Row 1) -->
+  <g transform="translate(80, 425)">
+    <!-- Pill 1: Alphabet & Phonics -->
+    <rect x="0" y="0" width="220" height="46" rx="23" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.18)" stroke-width="1.2"/>
+    <text x="110" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">🔤 Alphabet &amp; Phonics</text>
 
-  <rect x="400" y="510" width="130" height="44" rx="22" fill="white" opacity="0.15"/>
-  <text x="465" y="538" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">Numbers</text>
+    <!-- Pill 2: Essential Phrases -->
+    <rect x="236" y="0" width="200" height="46" rx="23" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.18)" stroke-width="1.2"/>
+    <text x="336" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">💬 Essential Phrases</text>
 
-  <rect x="546" y="510" width="104" height="44" rx="22" fill="white" opacity="0.15"/>
-  <text x="598" y="538" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">Quiz</text>
+    <!-- Pill 3: Numbers & Time -->
+    <rect x="452" y="0" width="180" height="46" rx="23" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.18)" stroke-width="1.2"/>
+    <text x="542" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">🔢 Numbers &amp; Time</text>
+  </g>
 
-  <!-- Divider -->
-  <rect x="720" y="80" width="2" height="470" fill="white" opacity="0.12" rx="1"/>
+  <!-- Feature Pills (Row 2) -->
+  <g transform="translate(80, 490)">
+    <!-- Pill 4: Adaptive Quizzes -->
+    <rect x="0" y="0" width="195" height="46" rx="23" fill="rgba(79, 70, 229, 0.35)" stroke="#6366f1" stroke-width="1.2"/>
+    <text x="97" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#c7d2fe" text-anchor="middle">🎯 Adaptive Quizzes</text>
 
-  <!-- Right column: Cyrillic showcase -->
-  <!-- Large decorative letters -->
-  <text x="790" y="250" font-family="Georgia, serif" font-size="200" fill="white" opacity="0.95" font-weight="bold">А</text>
-  <text x="960" y="330" font-family="Georgia, serif" font-size="200" fill="white" opacity="0.60" font-weight="bold">Б</text>
-  <text x="860" y="490" font-family="Georgia, serif" font-size="160" fill="white" opacity="0.35" font-weight="bold">В</text>
+    <!-- Pill 5: Native Audio Speech -->
+    <rect x="211" y="0" width="230" height="46" rx="23" fill="rgba(14, 165, 233, 0.3)" stroke="#38bdf8" stroke-width="1.2"/>
+    <text x="326" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#e0f2fe" text-anchor="middle">🔊 Native Speech Audio</text>
 
-  <!-- Label -->
-  <text x="975" y="575" font-family="'Helvetica Neue', Arial, sans-serif" font-size="22" fill="white" opacity="0.55" text-anchor="middle" letter-spacing="3">CYRILLIC ALPHABET</text>
+    <!-- Pill 6: PWA Offline -->
+    <rect x="457" y="0" width="175" height="46" rx="23" fill="rgba(245, 158, 11, 0.25)" stroke="#fbbf24" stroke-width="1.2"/>
+    <text x="544" y="29" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="600" fill="#fef3c7" text-anchor="middle">📱 PWA &amp; Mobile</text>
+  </g>
+
+  <!-- Vertical Divider Line -->
+  <line x1="730" y1="70" x2="730" y2="550" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-dasharray="6,6"/>
+
+  <!-- Right Column: English Alphabet & Phonics Showcase -->
+  <g transform="translate(770, 0)">
+    <!-- Large Letter 'A' Card -->
+    <g transform="translate(20, 110)">
+      <rect x="0" y="0" width="160" height="190" rx="20" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+      <text x="80" y="125" font-family="Georgia, serif" font-size="110" font-weight="bold" fill="#ffffff" text-anchor="middle">A</text>
+      <rect x="25" y="145" width="110" height="26" rx="13" fill="#4f46e5"/>
+      <text x="80" y="163" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">/eɪ/ · Apple</text>
+    </g>
+
+    <!-- Large Letter 'B' Card -->
+    <g transform="translate(200, 110)">
+      <rect x="0" y="0" width="160" height="190" rx="20" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+      <text x="80" y="125" font-family="Georgia, serif" font-size="110" font-weight="bold" fill="#fde047" text-anchor="middle">B</text>
+      <rect x="25" y="145" width="110" height="26" rx="13" fill="#0ea5e9"/>
+      <text x="80" y="163" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">/biː/ · Book</text>
+    </g>
+
+    <!-- Large Letter 'C' Card -->
+    <g transform="translate(110, 325)">
+      <rect x="0" y="0" width="160" height="190" rx="20" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+      <text x="80" y="125" font-family="Georgia, serif" font-size="110" font-weight="bold" fill="#38bdf8" text-anchor="middle">C</text>
+      <rect x="25" y="145" width="110" height="26" rx="13" fill="#10b981"/>
+      <text x="80" y="163" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">/siː/ · Cat</text>
+    </g>
+
+    <!-- Floating Phonics Bubbles -->
+    <circle cx="50" cy="380" r="28" fill="rgba(99, 102, 241, 0.25)" stroke="#818cf8" stroke-width="1"/>
+    <text x="50" y="386" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="#c7d2fe" text-anchor="middle">D</text>
+
+    <circle cx="330" cy="380" r="28" fill="rgba(245, 158, 11, 0.25)" stroke="#fbbf24" stroke-width="1"/>
+    <text x="330" y="386" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="#fde047" text-anchor="middle">E</text>
+
+    <!-- Academic Badge Label -->
+    <text x="190" y="555" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" fill="#94a3b8" text-anchor="middle" letter-spacing="3">
+      ENGLISH PHONICS &amp; VOCABULARY
+    </text>
+  </g>
 </svg>

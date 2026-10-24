@@ -6,7 +6,17 @@ import {
   isSpeechSupported as isBrowserSpeechSupported,
   initVoices as initBrowserVoices,
   SpeechOptions,
-  EnglishAccent
+  EnglishAccent,
+  getPreferredAccent,
+  getPreferredRate,
+  getPreferredPitch,
+  getPreferredVoiceURI,
+  getFriendlyEnglishVoices,
+  setPreferredVoice,
+  setPreferredAccent,
+  setPreferredRate,
+  previewVoice,
+  getBestEnglishVoice
 } from './browserSpeech';
 
 // Track currently speaking items by button ID
@@ -62,9 +72,10 @@ const processSpeechQueue = async (buttonId: string): Promise<void> => {
   
   try {
     const speechOptions: SpeechOptions = {
-      accent: (lang as EnglishAccent) || options?.accent || 'en-US',
-      rate: options?.rate ?? 0.9,
-      pitch: options?.pitch ?? 1.0,
+      accent: (lang as EnglishAccent) || options?.accent || getPreferredAccent(),
+      rate: options?.rate ?? getPreferredRate(),
+      pitch: options?.pitch ?? getPreferredPitch(),
+      voiceURI: options?.voiceURI || getPreferredVoiceURI() || undefined,
     };
 
     speakEnglishText(
@@ -120,11 +131,28 @@ export const cancelAllSpeech = (): void => {
   }
 };
 
+export {
+  getFriendlyEnglishVoices,
+  setPreferredVoice,
+  setPreferredAccent,
+  setPreferredRate,
+  getPreferredAccent,
+  getPreferredRate,
+  getPreferredVoiceURI,
+  previewVoice,
+  getBestEnglishVoice
+};
+
 const speechUtils = {
   isSpeechSupported,
   speak,
   initVoices,
-  cancelAllSpeech
+  cancelAllSpeech,
+  getFriendlyEnglishVoices,
+  setPreferredVoice,
+  getPreferredVoiceURI,
+  previewVoice,
+  getBestEnglishVoice
 };
 
 export default speechUtils;
