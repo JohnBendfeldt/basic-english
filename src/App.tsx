@@ -79,7 +79,7 @@ const updateMeta = (section: string) => {
   const ogDesc = document.querySelector('meta[property="og:description"]');
   if (ogDesc) ogDesc.setAttribute('content', meta.description);
   const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical) canonical.setAttribute('href', `https://basicrussian.org${SECTION_TO_PATH[section] || '/alphabet'}`);
+  if (canonical) canonical.setAttribute('href', `https://basicenglish.school${SECTION_TO_PATH[section] || '/alphabet'}`);
 };
 
 const App: React.FC = () => {
