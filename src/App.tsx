@@ -8,6 +8,8 @@ import BottomNavigation from './components/BottomNavigation';
 import UserMenu from './components/UserMenu';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+import VoiceSelectorModal from './components/VoiceSelectorModal';
+import { FaMicrophone } from 'react-icons/fa';
 import englishData from './data/englishData';
 import { initVoices, cancelAllSpeech } from './utils/speech';
 
@@ -87,6 +89,7 @@ const App: React.FC = () => {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [speechInitialized, setSpeechInitialized] = useState(false);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -248,12 +251,22 @@ const App: React.FC = () => {
             Basic English
           </h1>
           <div className="header-actions">
+            <button 
+              type="button" 
+              className="voice-header-btn" 
+              onClick={() => setVoiceModalOpen(true)}
+              title="Voice & Pronunciation Settings"
+              aria-label="Voice & Pronunciation Settings"
+            >
+              <FaMicrophone />
+              <span>Voice</span>
+            </button>
             {installPrompt && (
               <button onClick={handleInstallClick} className="install-button">
                 Install App
               </button>
             )}
-            <UserMenu onNavigate={handleSectionChange} />
+            <UserMenu onNavigate={handleSectionChange} onOpenVoiceModal={() => setVoiceModalOpen(true)} />
           </div>
         </div>
         <Navigation 
@@ -272,10 +285,15 @@ const App: React.FC = () => {
         activeSection={activeSection} 
         setActiveSection={handleSectionChange} 
       />
+
+      <VoiceSelectorModal 
+        isOpen={voiceModalOpen} 
+        onClose={() => setVoiceModalOpen(false)} 
+      />
       
       <footer>
         <p>
-          © {new Date().getFullYear()} Basic Russian Learning ·{' '}
+          © {new Date().getFullYear()} Basic English School ·{' '}
           <a
             href="/privacy"
             className="footer-link"
