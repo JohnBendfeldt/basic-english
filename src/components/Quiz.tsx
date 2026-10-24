@@ -403,37 +403,178 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const pronunciation = item.pronunciation?.toString() || '';
         const example = item.example?.toString() || '';
 
+        // Extract example words (e.g. "as in Cat, Car" -> ["cat", "car"])
+        const exampleWords = example
+          .replace(/^as in\s+/i, '')
+          .split(/[,/&]/)
+          .map(w => w.trim().toLowerCase())
+          .filter(w => w.length > 0);
+
+        const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
+        if (pronunciation && !pronunciation.includes('/')) {
+          validAnswers.push(pronunciation.toLowerCase());
+        }
+
         setCurrentQuestion({
           type: 'alphabet',
           prompt: character,
-          answer: (pronunciation || character).toLowerCase(),
-          hint: `Letter sound & phonics: ${pronunciation} (${example})`,
+          answer: validAnswers.join(' / '),
+          hint: pronunciation 
+            ? `Letter Sound & Phonics: ${pronunciation} (${example})` 
+            : `Alphabet Letter: ${character}`,
+          placeholder: `Type letter (${character}) or example word (${exampleWords[0] || 'word'})`,
           russian: character,
           id: selected.id
         });
-      } else {
+      } else if (selected.category === 'numbers') {
         const item = selected.item as PhraseItem;
-        const phrase = item.russian?.toString() || '';
-        const meaning = item.english?.toString() || '';
+        const wordForm = item.russian?.toString() || '';
+        const digitRaw = item.english?.toString() || '';
+        const digitsOnly = digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw;
 
         if (selected.isRussianToEnglish) {
+          // Word to digits
           setCurrentQuestion({
             type: selected.category,
-            prompt: phrase,
-            answer: meaning.toLowerCase(),
-            hint: 'What does this mean in English?',
-            russian: phrase,
+            prompt: wordForm,
+            answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
+            hint: 'Type this number in digits (or words):',
+            placeholder: `e.g. ${digitsOnly}`,
+            russian: wordForm,
             id: selected.id
           });
         } else {
+          // Digits to words
           setCurrentQuestion({
             type: selected.category,
-            prompt: meaning,
-            answer: phrase.toLowerCase(),
-            hint: 'How do you say this in English?',
-            russian: phrase,
+            prompt: digitsOnly,
+            answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
+            hint: 'Spell this number in English words:',
+            placeholder: `e.g. ${wordForm.toLowerCase()}`,
+            russian: wordForm,
             id: selected.id
           });
+        }
+      } else if (selected.category === 'basicPhrases') {
+        const item = selected.item as PhraseItem;
+        const phrase = item.russian?.toString() || '';
+        const situation = item.english?.toString() || '';
+
+        // If phrase is Russian Cyrillic (e.g. from Russian app test data), test English translation
+        if (containsCyrillic(phrase)) {
+          if (selected.isRussianToEnglish) {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: phrase,
+              answer: situation.toLowerCase(),
+              hint: 'What does this mean in English?',
+              russian: phrase,
+              id: selected.id
+            });
+          } else {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: situation,
+              answer: phrase.toLowerCase(),
+              hint: 'How do you say this in Russian?',
+              russian: phrase,
+              id: selected.id
+            });
+          }
+        } else {
+          // English learning app data
+          if (selected.isRussianToEnglish) {
+            // Phrase cloze completion
+            const words = phrase.split(' ');
+            let clozePrompt = phrase;
+            let clozeAnswer = phrase.toLowerCase();
+            let letterCountNotice = '';
+            
+            if (words.length >= 2) {
+              const rawLastWord = words[words.length - 1];
+              const cleanLastWord = rawLastWord.replace(/[.,!?;:]/g, '');
+              const startWords = words.slice(0, -1).join(' ');
+              const punctuation = rawLastWord.match(/[.,!?;:]+$/)?.[0] || '';
+
+              // Exact underscore count matching the missing word length!
+              const slots = '_'.repeat(cleanLastWord.length);
+              clozePrompt = `${startWords} ${slots}${punctuation}`;
+              clozeAnswer = `${cleanLastWord.toLowerCase()} / ${phrase.toLowerCase()}`;
+              letterCountNotice = ` • ${cleanLastWord.length} letters`;
+            }
+
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: clozePrompt,
+              answer: clozeAnswer,
+              hint: `Complete the phrase (${situation}${letterCountNotice}):`,
+              placeholder: 'Type missing word or full phrase...',
+              russian: phrase,
+              id: selected.id
+            });
+          } else {
+            // Conversational scenario
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: situation,
+              answer: phrase.toLowerCase(),
+              hint: 'How do you say this politely in English?',
+              placeholder: `e.g. ${phrase}`,
+              russian: phrase,
+              id: selected.id
+            });
+          }
+        }
+      } else {
+        // commonWords
+        const item = selected.item as PhraseItem;
+        const word = item.russian?.toString() || '';
+        const definition = item.english?.toString() || '';
+
+        if (containsCyrillic(word)) {
+          if (selected.isRussianToEnglish) {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: word,
+              answer: definition.toLowerCase(),
+              hint: 'What does this mean in English?',
+              russian: word,
+              id: selected.id
+            });
+          } else {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: definition,
+              answer: word.toLowerCase(),
+              hint: 'How do you say this in Russian?',
+              russian: word,
+              id: selected.id
+            });
+          }
+        } else {
+          if (selected.isRussianToEnglish) {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: word,
+              answer: word.toLowerCase(),
+              hint: `Vocabulary Word (${definition}) — Practice spelling:`,
+              placeholder: `Type '${word.toLowerCase()}'`,
+              russian: word,
+              id: selected.id
+            });
+          } else {
+            const firstLetter = word.charAt(0).toUpperCase();
+            const slots = '_'.repeat(Math.max(1, word.length - 1));
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: definition,
+              answer: word.toLowerCase(),
+              hint: `What is the English word? (${firstLetter}${slots} • ${word.length} letters):`,
+              placeholder: `Type word starting with ${firstLetter}...`,
+              russian: word,
+              id: selected.id
+            });
+          }
         }
       }
 
@@ -595,18 +736,87 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     } else if (isHardSign(currentQuestion.prompt) && isHardSignAnswer(userAnswerNormalized)) {
       isAnswerCorrect = true;
     } else {
-      // Collect all valid target answers (split by '/' if present)
+      // Conversational synonym helper for common English scenarios
+      const checkConversationalEquivalence = (user: string, target: string): boolean => {
+        const u = normalizeEnglishPhrase(user);
+        const t = normalizeEnglishPhrase(target);
+
+        // Cafe & restaurant beverage orders (e.g. "may i please have a coffee" <=> "i would like a coffee, please")
+        const coffeePhrases = [
+          'i would like a coffee please',
+          'i would like a coffee',
+          'i like a coffee please',
+          'id like a coffee please',
+          'id like a coffee',
+          'may i please have a coffee',
+          'may i have a coffee please',
+          'may i have a coffee',
+          'can i please have a coffee',
+          'can i have a coffee please',
+          'can i have a coffee',
+          'could i please have a coffee',
+          'could i have a coffee please',
+          'could i have a coffee',
+          'could i get a coffee please',
+          'could i get a coffee',
+          'a coffee please',
+          'coffee please'
+        ];
+        const isUserCoffee = coffeePhrases.some(p => normalizeEnglishPhrase(p) === u);
+        const isTargetCoffee = coffeePhrases.some(p => normalizeEnglishPhrase(p) === t);
+        if (isUserCoffee && isTargetCoffee) {
+          return true;
+        }
+
+        // Asking for the restroom / bathroom
+        const restroomPhrases = [
+          'where is the restroom',
+          'where is the bathroom',
+          'where is the toilet',
+          'where is restroom',
+          'where is bathroom',
+          'wheres the restroom',
+          'wheres the bathroom',
+          'wheres the toilet'
+        ];
+        const isUserRestroom = restroomPhrases.some(p => normalizeEnglishPhrase(p) === u);
+        const isTargetRestroom = restroomPhrases.some(p => normalizeEnglishPhrase(p) === t);
+        if (isUserRestroom && isTargetRestroom) {
+          return true;
+        }
+
+        // Polite check / bill requests
+        const billPhrases = [
+          'check please',
+          'the check please',
+          'bill please',
+          'the bill please',
+          'could i have the check please',
+          'could i have the bill please'
+        ];
+        const isUserBill = billPhrases.some(p => normalizeEnglishPhrase(p) === u);
+        const isTargetBill = billPhrases.some(p => normalizeEnglishPhrase(p) === t);
+        if (isUserBill && isTargetBill) {
+          return true;
+        }
+
+        return false;
+      };
+
+      // Collect all valid target answers (split by '/' if present, filtering out empty entries)
       const rawTargets = currentQuestion.answer.includes('/')
         ? currentQuestion.answer.split('/')
         : [currentQuestion.answer];
 
       const expandedTargets: string[] = [];
       rawTargets.forEach((target: string) => {
-        expandedTargets.push(target);
-        // Also add version without parentheses, e.g. "Hello (formal)" -> "Hello"
-        const noParens = target.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
-        if (noParens && noParens !== target) {
-          expandedTargets.push(noParens);
+        const clean = target.trim().replace(/^[\/\\()]+|[\/\\()]+$/g, '').trim();
+        if (clean.length > 0) {
+          expandedTargets.push(clean);
+          const noParens = clean.replace(/\s*\([^)]*\)\s*/g, ' ').trim();
+          if (noParens && noParens !== clean) {
+            expandedTargets.push(noParens);
+          }
         }
       });
 
@@ -641,7 +851,13 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             break;
           }
         } else {
-          // 4. English phrase matching with contraction expansion, synonyms, and article tolerance
+          // 4. Conversational equivalence
+          if (checkConversationalEquivalence(userAnswer, target)) {
+            isAnswerCorrect = true;
+            break;
+          }
+
+          // 5. English phrase matching with contraction expansion, synonyms, and article tolerance
           const userEnglishNorm = normalizeEnglishPhrase(userAnswer);
           const targetEnglishNorm = normalizeEnglishPhrase(target);
 
@@ -667,12 +883,16 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             }
           }
 
-          // English Levenshtein typo tolerance (forgiving 1 typo in short words, 2-3 in phrases)
-          const engMaxErrors = Math.max(1, Math.floor(targetEnglishNorm.length / 7));
-          const engDistance = levenshteinDistance(userEnglishNorm, targetEnglishNorm);
-          if (engDistance <= engMaxErrors) {
-            isAnswerCorrect = true;
-            break;
+          // English Levenshtein typo tolerance (only for words of 3+ letters, forgiving 1 typo in 4-8 chars, 2 in longer)
+          if (targetEnglishNorm.length >= 3) {
+            const engMaxErrors = Math.max(0, Math.floor((targetEnglishNorm.length - 1) / 5));
+            if (engMaxErrors > 0) {
+              const engDistance = levenshteinDistance(userEnglishNorm, targetEnglishNorm);
+              if (engDistance <= engMaxErrors) {
+                isAnswerCorrect = true;
+                break;
+              }
+            }
           }
         }
       }
