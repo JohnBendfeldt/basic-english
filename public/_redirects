@@ -1,2 +1,8 @@
+# Redirects from basicenglish.academy to basicenglish.school
+http://basicenglish.academy/*     https://basicenglish.school/:splat 301!
+https://basicenglish.academy/*    https://basicenglish.school/:splat 301!
+http://www.basicenglish.academy/*  https://basicenglish.school/:splat 301!
+https://www.basicenglish.academy/* https://basicenglish.school/:splat 301!
+
 # Redirects are managed in netlify.toml and _redirects
 /.well-known/*    /well-known/:splat    200!

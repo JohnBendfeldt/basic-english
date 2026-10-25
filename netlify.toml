@@ -37,6 +37,18 @@
   status = 301
   force = true
 
+[[redirects]]
+  from = "http://www.basicenglish.academy/*"
+  to = "https://basicenglish.school/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.basicenglish.academy/*"
+  to = "https://basicenglish.school/:splat"
+  status = 301
+  force = true
+
 # Serve sitemap directly
 [[redirects]]
   from = "/sitemap.xml"
