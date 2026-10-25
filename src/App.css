@@ -278,6 +278,7 @@ footer {
   flex-direction: column;
   border: 1px solid var(--card-border);
   position: relative;
+  min-height: 250px;
 }
 
 .alphabet-card:hover {
@@ -291,7 +292,7 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   width: 100%;
 }
 
@@ -325,7 +326,7 @@ footer {
 .letter-underline {
   width: 80px;
   height: 4px;
-  margin: 0.5rem auto 0.5rem;
+  margin: 0.5rem auto 0.25rem;
   background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
   border-radius: 2px;
   position: relative;
@@ -333,9 +334,9 @@ footer {
 
 .pronunciation-button-wrapper {
   position: absolute;
-  right: 30px; 
+  right: 0;
   top: 50%;
-  transform: translateY(-70%);
+  transform: translateY(-50%);
 }
 
 .alphabet-card .letter {
@@ -349,6 +350,8 @@ footer {
   color: var(--text-dark);
   margin-bottom: 0.8rem;
   font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .alphabet-card .pronunciation strong {
@@ -360,25 +363,75 @@ footer {
 }
 
 .alphabet-card .example {
-  font-style: italic;
-  color: var(--text-muted);
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: auto;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
-.alphabet-card .example strong {
-  margin-right: 4px;
+.example-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.85rem;
+  line-height: 1;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.09) 0%, rgba(168, 85, 247, 0.09) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  border-radius: 12px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, background 0.2s ease;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.08);
+}
+
+.example-icon-badge:hover {
+  transform: scale(1.15) rotate(-3deg);
+  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.16) 0%, rgba(168, 85, 247, 0.16) 100%);
+}
+
+.example-icon-badge:active {
+  transform: scale(0.95);
+}
+
+.example-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.example-word-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.example-word-row strong {
+  margin-right: 2px;
+  color: var(--text-dark);
+  font-size: 0.9rem;
 }
 
 .alphabet-card .example-word {
-  margin-right: 4px;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--primary-dark);
+  font-size: 1.05rem;
 }
 
 .alphabet-card .example-translation {
+  font-size: 0.82rem;
   color: var(--text-muted);
+  font-style: normal;
+  line-height: 1.35;
 }
 
 .letter-pronunciation {
@@ -386,27 +439,36 @@ footer {
 }
 
 .example-pronunciation {
-  margin-left: 5px; /* Reduced from 0.5rem for consistency */
+  margin-left: 2px;
 }
 
 /* Phrases Component & Study Mode */
 .phrases-header-section {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 2rem;
+  width: 100%;
 }
 
-.phrases-header-text h2 {
-  margin-bottom: 0.25rem;
+.phrases-header-section h2 {
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .phrases-subtitle {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #64748b;
-  margin: 0;
+  margin: 0.25rem 0 1rem;
+  text-align: center;
+  max-width: 650px;
+}
+
+.phrases-toggle-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .study-toggle-btn {
@@ -494,7 +556,36 @@ footer {
 .phrase-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.phrase-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.phrase-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  border-radius: 10px;
+  flex-shrink: 0;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.phrase-card:hover .phrase-icon-badge {
+  transform: scale(1.12);
 }
 
 .phrase-card .russian {
@@ -2364,13 +2455,13 @@ html {
 
   .phrases-header-section {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.75rem;
     margin-bottom: 1.2rem;
   }
 
   .study-toggle-btn {
-    align-self: flex-start;
+    align-self: center;
     font-size: 0.85rem;
     padding: 0.45rem 1rem;
   }

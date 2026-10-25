@@ -11,6 +11,7 @@ interface PhraseCardProps {
   onToggleReveal: () => void;
   animationKey: number; // Add a key to trigger animation only on the changed card
   contentType?: 'phrases' | 'words' | 'numbers'; // Add content type prop
+  icon?: string;
 }
 
 const PhraseCard: React.FC<PhraseCardProps> = ({ 
@@ -20,7 +21,8 @@ const PhraseCard: React.FC<PhraseCardProps> = ({
   isRevealed, 
   onToggleReveal,
   animationKey,
-  contentType = 'phrases' // Default to phrases
+  contentType = 'phrases', // Default to phrases
+  icon
 }) => {
   return (
     <div 
@@ -28,7 +30,14 @@ const PhraseCard: React.FC<PhraseCardProps> = ({
       key={`card-${animationKey}`}
     >
       <div className="phrase-header">
-        <h3 className="russian">{russian}</h3>
+        <div className="phrase-title-group">
+          {icon && (
+            <span className="phrase-icon-badge" role="img" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+          <h3 className="russian">{russian}</h3>
+        </div>
         <PronunciationButton 
           text={russian} 
           label={`Pronounce ${contentType === 'words' ? 'word' : contentType === 'numbers' ? 'number' : 'phrase'} ${russian}`}
@@ -124,21 +133,21 @@ const Phrases: React.FC<PhrasesProps> = ({
   return (
     <div className="section">
       <div className="phrases-header-section">
-        <div className="phrases-header-text">
-          <h2>{title}</h2>
-          <p className="phrases-subtitle">
-            Tap any card to reveal its translation and pronunciation
-          </p>
+        <h2>{title}</h2>
+        <p className="phrases-subtitle">
+          Tap any card to reveal its translation and pronunciation
+        </p>
+        <div className="phrases-toggle-container">
+          <button
+            type="button"
+            className="study-toggle-btn"
+            onClick={toggleAll}
+            aria-label={allRevealed ? `Hide all ${title.toLowerCase()}` : `Reveal all ${title.toLowerCase()}`}
+          >
+            <FaSyncAlt className={`toggle-btn-icon ${allRevealed ? 'rotated' : ''}`} aria-hidden="true" />
+            <span>{allRevealed ? 'Hide All' : 'Reveal All'}</span>
+          </button>
         </div>
-        <button
-          type="button"
-          className="study-toggle-btn"
-          onClick={toggleAll}
-          aria-label={allRevealed ? `Hide all ${title.toLowerCase()}` : `Reveal all ${title.toLowerCase()}`}
-        >
-          <FaSyncAlt className={`toggle-btn-icon ${allRevealed ? 'rotated' : ''}`} aria-hidden="true" />
-          <span>{allRevealed ? 'Hide All' : 'Reveal All'}</span>
-        </button>
       </div>
 
       <div className="phrases-container">
@@ -148,6 +157,7 @@ const Phrases: React.FC<PhrasesProps> = ({
             russian={item.russian}
             english={item.english}
             pronunciation={item.pronunciation}
+            icon={item.icon}
             isRevealed={revealedCards[index]}
             onToggleReveal={() => toggleReveal(index)}
             animationKey={lastToggledCard === index ? Date.now() : index}

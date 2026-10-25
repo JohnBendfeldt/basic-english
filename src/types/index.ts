@@ -11,6 +11,7 @@ export interface AlphabetItem {
   englishWord?: string; // Meaning or pronunciation note
   meaning?: string;
   phonics?: string;
+  icon?: string;        // Visual emoji or graphic identifier (e.g. 🍎)
 }
 
 // Phrase item structure
@@ -20,6 +21,7 @@ export interface PhraseItem {
   pronunciation: string; // Phonetic guide
   meaning?: string;
   category?: string;
+  icon?: string;         // Visual emoji or graphic identifier (e.g. 💧)
 }
 
 // Quiz-related interfaces
