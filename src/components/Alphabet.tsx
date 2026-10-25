@@ -1,5 +1,6 @@
 import React from 'react';
 import PronunciationButton from './PronunciationButton';
+import { speak } from '../utils/speech';
 
 interface AlphabetItemProps {
   letter: string;
@@ -7,6 +8,7 @@ interface AlphabetItemProps {
   example: string;
   russianWord?: string;
   englishWord?: string;
+  icon?: string;
 }
 
 interface AlphabetProps {
@@ -14,6 +16,12 @@ interface AlphabetProps {
 }
 
 const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
+  const handleBadgeSpeak = (word?: string) => {
+    if (word) {
+      speak(word, 'en-US', `badge-${word}`);
+    }
+  };
+
   return (
     <div className="section">
       <h2>English Alphabet & Phonics</h2>
@@ -26,17 +34,16 @@ const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
                   <span className="letter-uppercase">{item.letter}</span>
                   <span className="letter-lowercase">{item.letter.toLowerCase()}</span>
                 </div>
+                <div className="pronunciation-button-wrapper">
+                  <PronunciationButton 
+                    text={item.letter.toLowerCase()} 
+                    audioCategory="alphabet"
+                    useLocalAudio={true}
+                  />
+                </div>
               </div>
               
               <div className="letter-underline"></div>
-              
-              <div className="pronunciation-button-wrapper">
-                <PronunciationButton 
-                  text={item.letter.toLowerCase()} 
-                  audioCategory="alphabet"
-                  useLocalAudio={true}
-                />
-              </div>
             </div>
             
             <div className="pronunciation">
@@ -45,16 +52,32 @@ const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
             
             {item.russianWord && (
               <div className="example">
-                <strong>Example:</strong> <span className="example-word">{item.russianWord}</span> 
-                {item.englishWord && <span className="example-translation"> ({item.englishWord})</span>}
-                {item.russianWord && (
-                  <PronunciationButton 
-                    text={item.russianWord} 
-                    className="example-pronunciation"
-                    audioCategory="examples"
-                    useLocalAudio={true}
-                  />
+                {item.icon && (
+                  <button 
+                    type="button"
+                    className="example-icon-badge"
+                    title={`Hear pronunciation for ${item.russianWord}`}
+                    aria-label={`Pronounce ${item.russianWord}`}
+                    onClick={() => handleBadgeSpeak(item.russianWord)}
+                  >
+                    {item.icon}
+                  </button>
                 )}
+                <div className="example-details">
+                  <div className="example-word-row">
+                    <strong>Example:</strong>
+                    <span className="example-word">{item.russianWord}</span> 
+                    <PronunciationButton 
+                      text={item.russianWord} 
+                      className="example-pronunciation"
+                      audioCategory="examples"
+                      useLocalAudio={true}
+                    />
+                  </div>
+                  {item.englishWord && (
+                    <span className="example-translation">({item.englishWord})</span>
+                  )}
+                </div>
               </div>
             )}
           </div>
