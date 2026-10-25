@@ -862,9 +862,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             const wordCount = phrase.trim().split(/\s+/).length;
             setCurrentQuestion({
               type: selected.category,
-              prompt: '🎧 Listen carefully and type what you hear',
+              prompt: 'Type what you hear',
               answer: phrase.toLowerCase(),
-              hint: `Audio Dictation • ${wordCount} words • Type what you hear:`,
+              hint: `Type what you hear (${wordCount} ${wordCount === 1 ? 'word' : 'words'}):`,
               russian: phrase,
               id: selected.id,
               badge: '🎧 Listen & Type',
@@ -913,9 +913,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             // Mode: Listen & Type Audio Dictation
             setCurrentQuestion({
               type: selected.category,
-              prompt: '🎧 Listen and spell the word',
+              prompt: 'Type what you hear',
               answer: targetAnswer,
-              hint: `Audio Dictation • Starts with "${firstLetter}" • ${cleanWord.length} letters:`,
+              hint: `Type what you hear (Starts with "${firstLetter}" • ${cleanWord.length} letters):`,
               russian: cleanWord,
               id: selected.id,
               badge: '🎧 Listen & Type',
@@ -1746,7 +1746,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : currentQuestion.isAudioMode ? null : (
           <div className="quiz-prompt">
             <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
             {currentQuestion.type !== 'alphabet' && currentQuestion.russian && !currentQuestion.isAudioMode && (
@@ -1761,7 +1761,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
         {/* Dedicated Audio Controller for Audio Mode or Spoken English Prompts */}
         {(currentQuestion.isAudioMode || currentQuestion.audioText || (currentQuestion.russian && !containsCyrillic(currentQuestion.russian))) && (
-          <div className="quiz-audio-controller" role="toolbar" aria-label="Audio controls">
+          <div className={`quiz-audio-controller ${currentQuestion.isAudioMode ? 'hero-audio' : ''}`} role="toolbar" aria-label="Audio controls">
             <button
               type="button"
               className={`quiz-audio-btn primary ${isPlayingAudio ? 'playing' : ''}`}
