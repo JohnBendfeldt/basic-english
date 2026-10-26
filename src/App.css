@@ -4110,6 +4110,28 @@ html {
   font-size: 0.9rem;
 }
 
+.voice-alternative-banner {
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.voice-alternative-desc {
+  font-size: 0.8rem;
+  color: #166534;
+  line-height: 1.45;
+}
+
+.voice-alternative-desc strong {
+  color: #14532d;
+  font-weight: 700;
+}
+
 .voice-cards {
   display: flex;
   flex-direction: column;

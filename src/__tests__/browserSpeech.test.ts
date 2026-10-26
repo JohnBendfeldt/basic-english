@@ -154,6 +154,41 @@ describe('Browser Speech Synthesis - Voice Scoring & Discovery', () => {
     expect(bestVoice?.name).not.toContain('Ava');
   });
 
+  it('automatically picks Daniel (en-GB) over robotic compact Samantha when Samantha is the only US voice', () => {
+    const samantha = createMockVoice('Samantha', 'en-US');
+    const daniel = createMockVoice('Daniel', 'en-GB');
+
+    vi.stubGlobal('speechSynthesis', {
+      getVoices: () => [samantha, daniel],
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+      speaking: false
+    });
+
+    const bestVoice = getBestEnglishVoice('en-US');
+    expect(bestVoice).not.toBeNull();
+    expect(bestVoice?.name).toBe('Daniel');
+  });
+
+  it('keeps Google US English (Studio AI) over Daniel when Google voice is present', () => {
+    const googleUS = createMockVoice('Google US English', 'en-US');
+    const samantha = createMockVoice('Samantha', 'en-US');
+    const daniel = createMockVoice('Daniel', 'en-GB');
+
+    vi.stubGlobal('speechSynthesis', {
+      getVoices: () => [googleUS, samantha, daniel],
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+      speaking: false
+    });
+
+    const bestVoice = getBestEnglishVoice('en-US');
+    expect(bestVoice).not.toBeNull();
+    expect(bestVoice?.name).toBe('Google US English');
+  });
+
   it('detects low-quality voice environment (e.g. Firefox on Linux/Windows) and provides recommendation tip', () => {
     const legacyVoices = [
       createMockVoice('Microsoft David Desktop - English (United States)', 'en-US', { localService: true })

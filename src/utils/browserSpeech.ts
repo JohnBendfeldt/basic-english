@@ -165,9 +165,12 @@ export const scoreVoice = (voice: SpeechSynthesisVoice): number => {
   if (name.includes('enhanced') || name.includes('premium')) score += 400;
 
   // Tier 4: Clean standard offline system voices (usable offline fallbacks, but NOT neural)
-  if (name.includes('samantha') || name.includes('daniel')) score += 70;
-  if (name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 60;
-  if (name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 50;
+  // Daniel (Nuance / Vocalizer en-GB) is celebrated for having far clearer, more natural articulation
+  // than legacy compact synthesizers like Samantha
+  if (name.includes('daniel')) score += 140;
+  if (name.includes('samantha')) score += 50;
+  if (name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 40;
+  if (name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 30;
 
   if (voice.default) score += 20;
 
@@ -340,15 +343,30 @@ export const getBestEnglishVoice = (accent: EnglishAccent = getPreferredAccent()
     } catch (e) {}
   }
 
-  // 2. Filter friendly voices matching accent
   const friendly = getFriendlyEnglishVoices();
-  const accentMatches = friendly.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(accent.toLowerCase()));
 
+  // 2. Check if there are voices matching the requested accent
+  const accentMatches = friendly.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(accent.toLowerCase()));
+  const hasNeuralMatch = accentMatches.some(v => isNeuralVoice(v));
+
+  // If we have a genuine Studio AI voice for this accent (e.g. Google US English, Jenny, Aria), use it!
+  if (hasNeuralMatch) {
+    return accentMatches[0];
+  }
+
+  // 3. Natural Fallback: If no neural voice exists for American English (e.g. only robotic compact Samantha exists),
+  // prefer Daniel (en-GB). Daniel has far more human, natural articulation than Stephen Hawking-like compact Samantha.
+  const danielVoice = friendly.find(v => v.name.toLowerCase().includes('daniel'));
+  if (danielVoice && (!accentMatches[0] || !isNeuralVoice(accentMatches[0]))) {
+    return danielVoice;
+  }
+
+  // 4. Fallback to best matching voice for accent
   if (accentMatches.length > 0) {
     return accentMatches[0];
   }
 
-  // 3. Fallback to top-scoring friendly voice overall
+  // 5. Fallback to top-scoring friendly voice overall
   return friendly[0] || allEnglish.find(v => !failedVoiceURIs.has(v.voiceURI)) || allEnglish[0] || null;
 };
 
