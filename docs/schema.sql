@@ -1,5 +1,5 @@
 -- ==============================================================================
--- RUSSIAN LEARNING APP: SUPABASE POSTGRESQL SCHEMA WITH ROW LEVEL SECURITY (RLS)
+-- BASIC ENGLISH: SUPABASE POSTGRESQL SCHEMA WITH ROW LEVEL SECURITY (RLS)
 -- ==============================================================================
 -- Copy and paste this script into your Supabase Dashboard:
 -- Dashboard -> SQL Editor -> New Query -> Run
