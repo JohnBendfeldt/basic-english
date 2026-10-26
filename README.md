@@ -66,8 +66,8 @@ This project is actively developed and architected using **Google Antigravity** 
 ### Setup & Running
 ```bash
 # 1. Clone the repository
-git clone https://github.com/JohnBendfeldt/english-learning-app.git
-cd english-learning-app
+git clone https://github.com/JohnBendfeldt/basic-english.git
+cd basic-english
 
 # 2. Install dependencies
 npm install
