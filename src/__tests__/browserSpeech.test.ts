@@ -5,6 +5,7 @@ import {
   getFriendlyEnglishVoices,
   getBestEnglishVoice,
   getBrowserVoiceQualityInfo,
+  isNeuralVoice,
   speakEnglishText,
   setPreferredVoice,
   getPreferredVoiceURI
@@ -100,6 +101,38 @@ describe('Browser Speech Synthesis - Voice Scoring & Discovery', () => {
     expect(scoreVoice(zarvox)).toBe(-1000);
   });
 
+  it('heavily penalizes Stephen Hawking-like novelty voices (Eddy, Flo, Reed, Sandy)', () => {
+    const eddy = createMockVoice('Eddy', 'en-US');
+    const flo = createMockVoice('Flo', 'en-US');
+    const reed = createMockVoice('Reed', 'en-US');
+
+    expect(scoreVoice(eddy)).toBe(-600);
+    expect(scoreVoice(flo)).toBe(-600);
+    expect(scoreVoice(reed)).toBe(-600);
+  });
+
+  it('accurately distinguishes true AI neural voices from legacy offline synthesizers with isNeuralVoice', () => {
+    const googleUS = createMockVoice('Google US English');
+    const jenny = createMockVoice('Microsoft Jenny Online (Natural) - English (United States)');
+    const siri = createMockVoice('Siri Voice 1', 'en-US');
+    const samanthaEnhanced = createMockVoice('Samantha (Enhanced)', 'en-US');
+
+    const samanthaCompact = createMockVoice('Samantha', 'en-US');
+    const eddy = createMockVoice('Eddy', 'en-US');
+    const davidDesktop = createMockVoice('Microsoft David Desktop - English (United States)');
+
+    // True Neural AI
+    expect(isNeuralVoice(googleUS)).toBe(true);
+    expect(isNeuralVoice(jenny)).toBe(true);
+    expect(isNeuralVoice(siri)).toBe(true);
+    expect(isNeuralVoice(samanthaEnhanced)).toBe(true);
+
+    // Standard / Robotic offline synthesizers
+    expect(isNeuralVoice(samanthaCompact)).toBe(false);
+    expect(isNeuralVoice(eddy)).toBe(false);
+    expect(isNeuralVoice(davidDesktop)).toBe(false);
+  });
+
   it('excludes broken Microsoft Ava when selecting best English voice in Edge environment', () => {
     const mockVoices = [
       createMockVoice('Microsoft Ava Online (Natural) - English (United States)'),
@@ -137,7 +170,8 @@ describe('Browser Speech Synthesis - Voice Scoring & Discovery', () => {
     const qualityInfo = getBrowserVoiceQualityInfo();
     expect(qualityInfo.isLowQuality).toBe(true);
     expect(qualityInfo.hasNeuralVoices).toBe(false);
-    expect(qualityInfo.tip).toContain('recommend Microsoft Edge or Google Chrome');
+    expect(qualityInfo.tip).toContain('recommend Google Chrome');
+    expect(qualityInfo.tip).toContain('Microsoft Edge');
   });
 
   it('detects studio neural voice availability in Edge / Chrome', () => {

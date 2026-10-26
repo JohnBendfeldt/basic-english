@@ -88,6 +88,28 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Check if a voice is a genuine high-fidelity neural/AI voice.
+ * Only Microsoft Natural/Online, Google Studio, and Apple Enhanced/Premium/Siri
+ * qualify. Compact offline voices (like standard Samantha or Eddy) are legacy
+ * synthesizers and do NOT qualify.
+ */
+export const isNeuralVoice = (voice: SpeechSynthesisVoice): boolean => {
+  const name = voice.name.toLowerCase();
+  if (isVoiceBlacklisted(name)) return false;
+
+  // Microsoft Edge Natural neural voices
+  if (name.includes('natural') || name.includes('online (natural)')) return true;
+
+  // Google Chrome Cloud neural voices
+  if (name.includes('google')) return true;
+
+  // Apple Siri or explicitly Enhanced/Premium downloaded packs
+  if (name.includes('siri') || name.includes('enhanced') || name.includes('premium')) return true;
+
+  return false;
+};
+
+/**
  * Score a voice based on naturalness and human warmth.
  * Strongly down-votes legacy robotic and novelty synthesizer voices,
  * and blacklists voices known to be broken (like Edge Microsoft Ava).
@@ -98,6 +120,25 @@ export const scoreVoice = (voice: SpeechSynthesisVoice): number => {
   // If blacklisted or previously failed during this session, discard
   if (isVoiceBlacklisted(name) || (voice.voiceURI && failedVoiceURIs.has(voice.voiceURI))) {
     return -1000;
+  }
+
+  // Heavy penalty for joke / legacy robotic novelty synthesizer voices
+  // (e.g. Eddy, Flo, Reed, Sandy, Shelley, Albert, Zarvox) that sound like Stephen Hawking
+  const legacyRoboticNovelty = [
+    'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos',
+    'deranged', 'fred', 'good news', 'hysterical', 'jester', 'junior',
+    'kathy', 'organ', 'superstar', 'ralph', 'trinoids', 'whisper',
+    'wobble', 'zarvox', 'alex', 'bruce', 'victoria', 'vicki',
+    'espeak', 'speech-dispatcher', 'flite',
+    'eddy', 'flo', 'reed', 'sandy', 'shelley', 'grandpa', 'grandma', 'rocko'
+  ];
+  if (legacyRoboticNovelty.some(r => name.includes(r))) {
+    return -600;
+  }
+
+  // Penalty for legacy Windows SAPI5 robotic desktop voices (e.g. David Desktop, Zira Desktop)
+  if (name.includes('desktop')) {
+    return -400;
   }
 
   let score = 0;
@@ -115,32 +156,18 @@ export const scoreVoice = (voice: SpeechSynthesisVoice): number => {
 
   // Tier 2: Google Studio / Chrome neural voices
   if (name.includes('google')) {
-    score += 450;
-    if (name.includes('us english') || name.includes('uk english female')) score += 50;
+    score += 480;
+    if (name.includes('us english') || name.includes('uk english female')) score += 40;
   }
 
   // Tier 3: Apple Siri / Enhanced / Premium voices (macOS / iOS)
-  if (name.includes('siri')) score += 420;
-  if (name.includes('enhanced') || name.includes('premium')) score += 380;
+  if (name.includes('siri')) score += 440;
+  if (name.includes('enhanced') || name.includes('premium')) score += 400;
 
-  // Tier 4: Celebrated warm, friendly human voices
-  if (name.includes('samantha')) score += 360;
-  if (name.includes('daniel')) score += 340;
-  if (name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 320;
-  if (name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 300;
-  // Local Apple Ava (without Microsoft/Online) on macOS is acceptable
-  if (name.includes('ava') && !name.includes('microsoft') && !name.includes('online')) score += 280;
-  if (name.includes('sonia') || name.includes('flo') || name.includes('eddy') || name.includes('reed')) score += 220;
-  if (name.includes('shelley') || name.includes('sandy')) score += 180;
-  if (name.includes('karen') || name.includes('moira') || name.includes('tessa') || name.includes('fiona')) score += 150;
-
-  // Penalty for legacy Windows SAPI5 robotic desktop voices (e.g. David Desktop, Zira Desktop)
-  if (name.includes('desktop')) {
-    score -= 400;
-  }
-
-  // Small reliability bonus for local voices (zero network latency, never fails from network drops)
-  if (voice.localService) score += 30;
+  // Tier 4: Clean standard offline system voices (usable offline fallbacks, but NOT neural)
+  if (name.includes('samantha') || name.includes('daniel')) score += 70;
+  if (name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 60;
+  if (name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 50;
 
   if (voice.default) score += 20;
 
@@ -197,14 +224,12 @@ export const getBrowserVoiceQualityInfo = (): BrowserVoiceQualityInfo => {
 
   const topVoice = voices[0];
   const topScore = scoreVoice(topVoice);
-  const hasNeuralVoices = topScore >= 450;
-  const isLowQuality = topScore < 200;
+  const hasNeuralVoices = isNeuralVoice(topVoice);
+  const isLowQuality = !hasNeuralVoices;
 
   let tip: string | null = null;
-  if (isLowQuality) {
-    tip = "Your browser is using basic synthesizer voices. For the most natural, human-like pronunciation (with Jenny & Aria), we recommend Microsoft Edge or Google Chrome.";
-  } else if (!hasNeuralVoices) {
-    tip = "Standard English voices detected. Microsoft Edge and Google Chrome provide studio-quality neural voices for English learners.";
+  if (!hasNeuralVoices) {
+    tip = "Your browser is using basic offline synthesizers. For natural, human-like AI voices, we recommend Google Chrome (Google US English) or Microsoft Edge (Jenny & Aria).";
   }
 
   return {
@@ -534,6 +559,7 @@ const browserSpeech = {
   setPreferredPitch,
   getPreferredPitch,
   scoreVoice,
+  isNeuralVoice,
   isVoiceBlacklisted,
   isSpeechSupported,
   initVoices,

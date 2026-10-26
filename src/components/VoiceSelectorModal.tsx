@@ -10,6 +10,7 @@ import {
   getPreferredAccent,
   getBrowserVoiceQualityInfo,
   BrowserVoiceQualityInfo,
+  isNeuralVoice,
   previewVoice,
   scoreVoice,
   EnglishAccent
@@ -109,11 +110,10 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
   };
 
   const getVoiceBadge = (voice: SpeechSynthesisVoice) => {
-    const score = scoreVoice(voice);
-    if (score >= 450) return <span className="voice-badge neural">✨ Studio Neural</span>;
-    if (score >= 280) return <span className="voice-badge natural">🌟 Natural</span>;
-    if (score >= 150) return <span className="voice-badge friendly">Friendly</span>;
-    return <span className="voice-badge standard">Standard</span>;
+    if (isNeuralVoice(voice)) {
+      return <span className="voice-badge neural">✨ Studio AI</span>;
+    }
+    return <span className="voice-badge standard">Basic Synth</span>;
   };
 
   return (
@@ -238,7 +238,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
                           <span className="voice-name">{voice.name.replace(/\(.*\)/, '').trim()}</span>
                           {getVoiceBadge(voice)}
                         </div>
-                        <span className="voice-lang-meta">{voice.lang} {voice.localService ? '• Local Fast' : '• High-Def'}</span>
+                        <span className="voice-lang-meta">{voice.lang} • {isNeuralVoice(voice) ? 'High-Definition AI Voice' : 'Standard Offline Voice'}</span>
                       </div>
                     </div>
                     <button
@@ -260,7 +260,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
 
         <div className="voice-modal-footer">
           <p className="voice-tip">
-            💡 <em>Tip: Jenny, Aria, Samantha, and Google voices offer the smoothest, most friendly tone for English learners.</em>
+            💡 <em>Tip: Google voices (in Chrome) and Jenny / Aria (in Edge) provide the most natural, human-like pronunciation for learning English.</em>
           </p>
           <button 
             type="button" 

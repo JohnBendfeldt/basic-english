@@ -17,7 +17,8 @@ import {
   setPreferredRate,
   previewVoice,
   getBestEnglishVoice,
-  getBrowserVoiceQualityInfo
+  getBrowserVoiceQualityInfo,
+  isNeuralVoice
 } from './browserSpeech';
 
 // Track currently speaking items by button ID
@@ -142,7 +143,8 @@ export {
   getPreferredVoiceURI,
   previewVoice,
   getBestEnglishVoice,
-  getBrowserVoiceQualityInfo
+  getBrowserVoiceQualityInfo,
+  isNeuralVoice
 };
 
 const speechUtils = {
@@ -155,7 +157,8 @@ const speechUtils = {
   getPreferredVoiceURI,
   previewVoice,
   getBestEnglishVoice,
-  getBrowserVoiceQualityInfo
+  getBrowserVoiceQualityInfo,
+  isNeuralVoice
 };
 
 export default speechUtils;
