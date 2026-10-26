@@ -8,6 +8,8 @@ import {
   setPreferredAccent,
   getPreferredRate,
   getPreferredAccent,
+  getBrowserVoiceQualityInfo,
+  BrowserVoiceQualityInfo,
   previewVoice,
   scoreVoice,
   EnglishAccent
@@ -24,6 +26,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
   const [selectedAccent, setSelectedAccent] = useState<EnglishAccent>(getPreferredAccent());
   const [rate, setRate] = useState<number>(getPreferredRate());
   const [activePreviewURI, setActivePreviewURI] = useState<string | null>(null);
+  const [qualityInfo, setQualityInfo] = useState<BrowserVoiceQualityInfo | null>(null);
 
   // Load voices on mount / open
   useEffect(() => {
@@ -37,6 +40,8 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
       if (best) {
         setSelectedURI(best.voiceURI);
       }
+
+      setQualityInfo(getBrowserVoiceQualityInfo());
     };
 
     loadVoices();
@@ -105,10 +110,10 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
 
   const getVoiceBadge = (voice: SpeechSynthesisVoice) => {
     const score = scoreVoice(voice);
-    if (score >= 400) return <span className="voice-badge neural">✨ Studio Neural</span>;
-    if (score >= 250) return <span className="voice-badge natural">🌟 Natural</span>;
+    if (score >= 450) return <span className="voice-badge neural">✨ Studio Neural</span>;
+    if (score >= 280) return <span className="voice-badge natural">🌟 Natural</span>;
     if (score >= 150) return <span className="voice-badge friendly">Friendly</span>;
-    return null;
+    return <span className="voice-badge standard">Standard</span>;
   };
 
   return (
@@ -164,6 +169,16 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
             🇦🇺 Australian English
           </button>
         </div>
+
+        {/* Browser Voice Quality Recommendation Banner */}
+        {qualityInfo && qualityInfo.tip && (
+          <div className={`voice-quality-banner ${qualityInfo.isLowQuality ? 'low-quality' : ''}`}>
+            <span className="voice-quality-icon" aria-hidden="true">💡</span>
+            <span className="voice-quality-text">
+              <strong>Browser Voice Note:</strong> {qualityInfo.tip}
+            </span>
+          </div>
+        )}
 
         {/* Speed / Pace Selector */}
         <div className="voice-rate-section">
@@ -245,7 +260,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
 
         <div className="voice-modal-footer">
           <p className="voice-tip">
-            💡 <em>Tip: Samantha, Ava, and Google voices offer the smoothest, most friendly tone for English learners.</em>
+            💡 <em>Tip: Jenny, Aria, Samantha, and Google voices offer the smoothest, most friendly tone for English learners.</em>
           </p>
           <button 
             type="button" 
