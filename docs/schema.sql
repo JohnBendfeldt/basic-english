@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.word_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   category VARCHAR(50) NOT NULL,
-  word_id VARCHAR(150) NOT NULL, -- e.g. 'alphabet-А', 'phrases-Привет'
+  word_id VARCHAR(150) NOT NULL, -- e.g. 'alphabet-A', 'phrases-Hello'
   prompt TEXT NOT NULL,
   answer TEXT NOT NULL,
   times_correct INTEGER NOT NULL DEFAULT 0,
