@@ -4012,6 +4012,37 @@ html {
   box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25);
 }
 
+.voice-quality-banner {
+  margin: 0.85rem 1.5rem 0;
+  padding: 0.75rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.82rem;
+  color: #1e40af;
+  line-height: 1.45;
+}
+
+.voice-quality-banner.low-quality {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.voice-quality-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.voice-quality-text strong {
+  font-weight: 700;
+  color: inherit;
+}
+
 .voice-rate-section {
   padding: 0.9rem 1.5rem;
   background: #ffffff;
@@ -4177,6 +4208,11 @@ html {
 .voice-badge.friendly {
   background: #e0f2fe;
   color: #0369a1;
+}
+
+.voice-badge.standard {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .voice-lang-meta {

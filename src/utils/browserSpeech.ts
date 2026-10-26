@@ -20,6 +20,34 @@ let currentRate = 0.95;
 let currentPitch = 1.0;
 let currentVoiceURI: string | null = null;
 
+// Track voices that failed during runtime playback so we never retry broken voices
+const failedVoiceURIs = new Set<string>();
+
+/**
+ * Check if a voice name represents a known broken voice on specific browser engines.
+ * Notably, Microsoft Ava Online (Natural) in Microsoft Edge has a known bug in Edge's
+ * Web Speech API where it fails with network/synthesis-failed errors or plays silence.
+ */
+export const isVoiceBlacklisted = (name: string): boolean => {
+  const lower = name.toLowerCase();
+
+  // Microsoft Ava Online (Natural) is broken in Edge's Web Speech API
+  if (lower.includes('ava') && (lower.includes('microsoft') || lower.includes('online') || lower.includes('natural'))) {
+    return true;
+  }
+
+  // Joke / novelty synthesizer voices
+  const noveltyNames = [
+    'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos',
+    'deranged', 'fred', 'good news', 'hysterical', 'jester', 'junior',
+    'kathy', 'organ', 'superstar', 'ralph', 'trinoids', 'whisper',
+    'wobble', 'zarvox', 'alex', 'bruce', 'victoria', 'vicki',
+    'espeak', 'speech-dispatcher', 'flite'
+  ];
+
+  return noveltyNames.some(r => lower.includes(r));
+};
+
 // Load persisted settings if available in browser
 if (typeof window !== 'undefined') {
   try {
@@ -44,7 +72,16 @@ if (typeof window !== 'undefined') {
       }
     }
 
-    currentVoiceURI = localStorage.getItem('basicenglish_voice_uri');
+    const savedURI = localStorage.getItem('basicenglish_voice_uri');
+    if (savedURI) {
+      // Clear legacy broken voice if user previously had Ava saved in Edge
+      if (isVoiceBlacklisted(savedURI) || savedURI.toLowerCase().includes('ava')) {
+        localStorage.removeItem('basicenglish_voice_uri');
+        currentVoiceURI = null;
+      } else {
+        currentVoiceURI = savedURI;
+      }
+    }
   } catch (e) {
     // Ignore storage errors in restricted contexts
   }
@@ -52,41 +89,58 @@ if (typeof window !== 'undefined') {
 
 /**
  * Score a voice based on naturalness and human warmth.
- * Strongly down-votes legacy robotic and novelty synthesizer voices.
+ * Strongly down-votes legacy robotic and novelty synthesizer voices,
+ * and blacklists voices known to be broken (like Edge Microsoft Ava).
  */
 export const scoreVoice = (voice: SpeechSynthesisVoice): number => {
   const name = voice.name.toLowerCase();
 
-  // Heavy penalty for joke / legacy robotic synthesizer voices
-  const roboticNames = [
-    'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos',
-    'deranged', 'fred', 'good news', 'hysterical', 'jester', 'junior',
-    'kathy', 'organ', 'superstar', 'ralph', 'trinoids', 'whisper',
-    'wobble', 'zarvox', 'alex', 'bruce', 'victoria', 'vicki'
-  ];
-  if (roboticNames.some(r => name.includes(r))) {
+  // If blacklisted or previously failed during this session, discard
+  if (isVoiceBlacklisted(name) || (voice.voiceURI && failedVoiceURIs.has(voice.voiceURI))) {
     return -1000;
   }
 
   let score = 0;
 
   // Tier 1: Microsoft Natural neural voices (Edge / Windows 11)
-  if (name.includes('natural') || name.includes('online (natural)')) score += 500;
+  if (name.includes('natural') || name.includes('online (natural)')) {
+    score += 500;
+    // Microsoft Jenny is the flagship, smoothest, and most reliable English voice in Edge
+    if (name.includes('jenny')) score += 180; // Total 680
+    // Microsoft Aria is Microsoft's primary assistant voice, exceptionally clear and reliable
+    if (name.includes('aria')) score += 160;  // Total 660
+    // Microsoft Guy is clear and friendly male voice
+    if (name.includes('guy')) score += 140;   // Total 640
+  }
 
   // Tier 2: Google Studio / Chrome neural voices
-  if (name.includes('google')) score += 400;
+  if (name.includes('google')) {
+    score += 450;
+    if (name.includes('us english') || name.includes('uk english female')) score += 50;
+  }
 
   // Tier 3: Apple Siri / Enhanced / Premium voices (macOS / iOS)
-  if (name.includes('enhanced') || name.includes('premium')) score += 350;
-  if (name.includes('siri')) score += 300;
+  if (name.includes('siri')) score += 420;
+  if (name.includes('enhanced') || name.includes('premium')) score += 380;
 
   // Tier 4: Celebrated warm, friendly human voices
-  if (name.includes('samantha')) score += 280;
-  if (name.includes('ava') || name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 250;
-  if (name.includes('daniel') || name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 250;
-  if (name.includes('jenny') || name.includes('aria') || name.includes('guy') || name.includes('sonia')) score += 250;
-  if (name.includes('flo') || name.includes('eddy') || name.includes('reed') || name.includes('shelley') || name.includes('sandy')) score += 180;
+  if (name.includes('samantha')) score += 360;
+  if (name.includes('daniel')) score += 340;
+  if (name.includes('oliver') || name.includes('serena') || name.includes('kate')) score += 320;
+  if (name.includes('allison') || name.includes('susan') || name.includes('zoe')) score += 300;
+  // Local Apple Ava (without Microsoft/Online) on macOS is acceptable
+  if (name.includes('ava') && !name.includes('microsoft') && !name.includes('online')) score += 280;
+  if (name.includes('sonia') || name.includes('flo') || name.includes('eddy') || name.includes('reed')) score += 220;
+  if (name.includes('shelley') || name.includes('sandy')) score += 180;
   if (name.includes('karen') || name.includes('moira') || name.includes('tessa') || name.includes('fiona')) score += 150;
+
+  // Penalty for legacy Windows SAPI5 robotic desktop voices (e.g. David Desktop, Zira Desktop)
+  if (name.includes('desktop')) {
+    score -= 400;
+  }
+
+  // Small reliability bonus for local voices (zero network latency, never fails from network drops)
+  if (voice.localService) score += 30;
 
   if (voice.default) score += 20;
 
@@ -103,16 +157,63 @@ export const getEnglishVoices = (): SpeechSynthesisVoice[] => {
 };
 
 /**
- * Get only friendly, high-quality English voices (excluding novelty/robotic voices),
+ * Get only friendly, high-quality English voices (excluding novelty/broken voices),
  * sorted from highest to lowest quality.
  */
 export const getFriendlyEnglishVoices = (): SpeechSynthesisVoice[] => {
   const allEnglish = getEnglishVoices();
   const friendly = allEnglish
-    .filter(v => scoreVoice(v) > -500)
+    .filter(v => scoreVoice(v) > -500 && !failedVoiceURIs.has(v.voiceURI))
     .sort((a, b) => scoreVoice(b) - scoreVoice(a));
 
   return friendly.length > 0 ? friendly : allEnglish;
+};
+
+/**
+ * Information about the host browser's voice quality capabilities
+ */
+export interface BrowserVoiceQualityInfo {
+  isLowQuality: boolean;
+  hasNeuralVoices: boolean;
+  bestVoiceName: string | null;
+  bestScore: number;
+  tip: string | null;
+}
+
+/**
+ * Detect browser voice capabilities and provide recommendations if voices are low-quality
+ */
+export const getBrowserVoiceQualityInfo = (): BrowserVoiceQualityInfo => {
+  const voices = getFriendlyEnglishVoices();
+  if (voices.length === 0) {
+    return {
+      isLowQuality: true,
+      hasNeuralVoices: false,
+      bestVoiceName: null,
+      bestScore: 0,
+      tip: "No English speech voices detected on this browser. Try opening Basic English in Microsoft Edge or Google Chrome."
+    };
+  }
+
+  const topVoice = voices[0];
+  const topScore = scoreVoice(topVoice);
+  const hasNeuralVoices = topScore >= 450;
+  const isLowQuality = topScore < 200;
+
+  let tip: string | null = null;
+  if (isLowQuality) {
+    tip = "Your browser is using basic synthesizer voices. For the most natural, human-like pronunciation (with Jenny & Aria), we recommend Microsoft Edge or Google Chrome.";
+  } else if (!hasNeuralVoices) {
+    tip = "Standard English voices detected. Microsoft Edge and Google Chrome provide studio-quality neural voices for English learners.";
+  }
+
+  return {
+    isLowQuality,
+    hasNeuralVoices,
+    bestVoiceName: topVoice.name,
+    bestScore: topScore,
+    tip
+  };
 };
 
 /**
@@ -201,10 +302,17 @@ export const getBestEnglishVoice = (accent: EnglishAccent = getPreferredAccent()
   const allEnglish = getEnglishVoices();
   if (allEnglish.length === 0) return null;
 
-  // 1. Check if user explicitly selected a voice that exists in current browser
+  // 1. Check if user explicitly selected a voice that exists, is valid, and hasn't failed
   if (currentVoiceURI) {
     const userVoice = allEnglish.find(v => v.voiceURI === currentVoiceURI);
-    if (userVoice) return userVoice;
+    if (userVoice && scoreVoice(userVoice) > -500 && !failedVoiceURIs.has(userVoice.voiceURI)) {
+      return userVoice;
+    }
+    // Saved voice is broken or blacklisted, clear it
+    currentVoiceURI = null;
+    try {
+      localStorage.removeItem('basicenglish_voice_uri');
+    } catch (e) {}
   }
 
   // 2. Filter friendly voices matching accent
@@ -216,11 +324,14 @@ export const getBestEnglishVoice = (accent: EnglishAccent = getPreferredAccent()
   }
 
   // 3. Fallback to top-scoring friendly voice overall
-  return friendly[0] || allEnglish[0] || null;
+  return friendly[0] || allEnglish.find(v => !failedVoiceURIs.has(v.voiceURI)) || allEnglish[0] || null;
 };
 
 /**
- * Speak English text using native browser speech synthesis
+ * Speak English text using native browser speech synthesis.
+ * Includes automatic recovery fallback: if an online/specific voice fails
+ * (e.g. Edge network drop or buggy synthesis), it immediately retries
+ * with a reliable system voice so the learner never experiences silence.
  */
 export const speakEnglishText = (
   text: string,
@@ -249,43 +360,102 @@ export const speakEnglishText = (
   const rate = options?.rate !== undefined ? options.rate : getPreferredRate();
   const pitch = options?.pitch !== undefined ? options.pitch : getPreferredPitch();
 
-  const utterance = new SpeechSynthesisUtterance(text.trim());
-  utterance.lang = accent;
-  utterance.rate = rate;
-  utterance.pitch = pitch;
-
-  // Determine which voice to use
-  let voice: SpeechSynthesisVoice | null = null;
+  // Determine initial preferred voice
+  let voiceToUse: SpeechSynthesisVoice | null = null;
   if (options?.voiceURI) {
-    voice = getEnglishVoices().find(v => v.voiceURI === options.voiceURI) || null;
+    voiceToUse = getEnglishVoices().find(v => v.voiceURI === options.voiceURI && !failedVoiceURIs.has(v.voiceURI)) || null;
   }
-  if (!voice) {
-    voice = getBestEnglishVoice(accent);
-  }
-  if (voice) {
-    utterance.voice = voice;
+  if (!voiceToUse) {
+    voiceToUse = getBestEnglishVoice(accent);
   }
 
-  let completed = false;
+  const attemptSpeak = (chosenVoice: SpeechSynthesisVoice | null, isRetry = false) => {
+    const utterance = new SpeechSynthesisUtterance(text.trim());
+    utterance.lang = accent;
+    utterance.rate = rate;
+    utterance.pitch = pitch;
 
-  utterance.onend = () => {
-    if (!completed) {
-      completed = true;
-      if (onEnd) onEnd();
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
     }
-  };
 
-  utterance.onerror = (event) => {
-    if (!completed) {
-      completed = true;
-      if (event.error !== 'interrupted' && event.error !== 'canceled') {
-        console.warn(`Speech synthesis notice: ${event.error}`);
+    let completed = false;
+    let speechWatchdog: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (speechWatchdog) {
+        clearTimeout(speechWatchdog);
+        speechWatchdog = null;
       }
-      if (onEnd) onEnd();
+    };
+
+    utterance.onend = () => {
+      if (!completed) {
+        completed = true;
+        cleanup();
+        if (onEnd) onEnd();
+      }
+    };
+
+    utterance.onerror = (event) => {
+      if (completed) return;
+      cleanup();
+
+      // Non-fatal interruptions (user clicking another sound or navigating away)
+      if (event.error === 'interrupted' || event.error === 'canceled') {
+        completed = true;
+        if (onEnd) onEnd();
+        return;
+      }
+
+      console.warn(`Speech synthesis notice (${chosenVoice?.name || 'system'}): ${event.error}`);
+
+      // If a specific voice failed (e.g. Edge Ava or cloud timeout) and this is the first attempt,
+      // blacklist the broken voice for this session and immediately retry with system default voice
+      if (!isRetry && chosenVoice) {
+        failedVoiceURIs.add(chosenVoice.voiceURI);
+        if (currentVoiceURI === chosenVoice.voiceURI) {
+          currentVoiceURI = null;
+          try {
+            localStorage.removeItem('basicenglish_voice_uri');
+          } catch (e) {}
+        }
+
+        console.info(`Auto-recovering speech using reliable fallback voice...`);
+        const fallbackVoice = getEnglishVoices().find(v => 
+          v.voiceURI !== chosenVoice.voiceURI && 
+          !failedVoiceURIs.has(v.voiceURI) && 
+          (v.localService || v.default)
+        ) || null;
+
+        attemptSpeak(fallbackVoice, true);
+        return;
+      }
+
+      completed = true;
+      if (onError) {
+        onError(new Error(`Speech synthesis error: ${event.error}`));
+      } else if (onEnd) {
+        onEnd();
+      }
+    };
+
+    // Chromium/Edge speech synthesis keep-alive guard
+    speechWatchdog = setTimeout(() => {
+      if (!completed && window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }, 2500);
+
+    window.speechSynthesis.speak(utterance);
+
+    // If Chromium starts paused, unpause immediately
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
     }
   };
 
-  window.speechSynthesis.speak(utterance);
+  attemptSpeak(voiceToUse, false);
 };
 
 /**
@@ -354,6 +524,7 @@ const browserSpeech = {
   getEnglishVoices,
   getFriendlyEnglishVoices,
   getBestEnglishVoice,
+  getBrowserVoiceQualityInfo,
   setPreferredVoice,
   getPreferredVoiceURI,
   setPreferredAccent,
@@ -363,6 +534,7 @@ const browserSpeech = {
   setPreferredPitch,
   getPreferredPitch,
   scoreVoice,
+  isVoiceBlacklisted,
   isSpeechSupported,
   initVoices,
 };

@@ -16,7 +16,8 @@ import {
   setPreferredAccent,
   setPreferredRate,
   previewVoice,
-  getBestEnglishVoice
+  getBestEnglishVoice,
+  getBrowserVoiceQualityInfo
 } from './browserSpeech';
 
 // Track currently speaking items by button ID
@@ -140,7 +141,8 @@ export {
   getPreferredRate,
   getPreferredVoiceURI,
   previewVoice,
-  getBestEnglishVoice
+  getBestEnglishVoice,
+  getBrowserVoiceQualityInfo
 };
 
 const speechUtils = {
@@ -152,7 +154,8 @@ const speechUtils = {
   setPreferredVoice,
   getPreferredVoiceURI,
   previewVoice,
-  getBestEnglishVoice
+  getBestEnglishVoice,
+  getBrowserVoiceQualityInfo
 };
 
 export default speechUtils;
