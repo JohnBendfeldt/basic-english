@@ -40,6 +40,10 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
       const best = getBestEnglishVoice();
       if (best) {
         setSelectedURI(best.voiceURI);
+        const bestLang = best.lang.toLowerCase().replace('_', '-');
+        if (bestLang.startsWith('en-gb') && !localStorage.getItem('basicenglish_accent')) {
+          setSelectedAccent('en-GB');
+        }
       }
 
       setQualityInfo(getBrowserVoiceQualityInfo());
@@ -74,6 +78,14 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
     if (selectedAccent === 'en-AU') return v.lang.toLowerCase().replace('_', '-').startsWith('en-au');
     return true;
   });
+
+  // Check if American English has genuine neural AI voices (e.g. Google US English, Jenny)
+  const hasUSNeural = voices.some(v => v.lang.toLowerCase().replace('_', '-').startsWith('en-us') && isNeuralVoice(v));
+  // If user is viewing American English and only robotic synthesizers (like Samantha) exist,
+  // surface Daniel as a natural, clear alternative
+  const danielAlternative = selectedAccent === 'en-US' && !hasUSNeural
+    ? voices.find(v => v.name.toLowerCase().includes('daniel') && !filteredVoices.some(fv => fv.voiceURI === v.voiceURI))
+    : null;
 
   const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
     setSelectedURI(voice.voiceURI);
@@ -112,6 +124,9 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
   const getVoiceBadge = (voice: SpeechSynthesisVoice) => {
     if (isNeuralVoice(voice)) {
       return <span className="voice-badge neural">✨ Studio AI</span>;
+    }
+    if (voice.name.toLowerCase().includes('daniel')) {
+      return <span className="voice-badge natural">🌟 Clear Accent</span>;
     }
     return <span className="voice-badge standard">Basic Synth</span>;
   };
@@ -214,6 +229,43 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
         {/* Available Voices List */}
         <div className="voice-list-container">
           <label className="voice-list-label">Available Friendly Voices on Your Device:</label>
+
+          {danielAlternative && (
+            <div className="voice-alternative-banner">
+              <div className="voice-alternative-desc">
+                <strong>Natural Sounding Alternative:</strong> Since only basic offline American synthesizers are installed on your device, Daniel (British English) is recommended for clearer, more natural pronunciation.
+              </div>
+              <div
+                key={danielAlternative.voiceURI}
+                className={`voice-card ${danielAlternative.voiceURI === selectedURI ? 'selected' : ''}`}
+                onClick={() => handleSelectVoice(danielAlternative)}
+              >
+                <div className="voice-card-left">
+                  <div className="voice-radio">
+                    {danielAlternative.voiceURI === selectedURI && <FaCheck />}
+                  </div>
+                  <div className="voice-info">
+                    <div className="voice-name-row">
+                      <span className="voice-name">{danielAlternative.name.replace(/\(.*\)/, '').trim()}</span>
+                      <span className="voice-badge natural">🌟 Clear Accent</span>
+                    </div>
+                    <span className="voice-lang-meta">{danielAlternative.lang} • Recommended Natural Alternative</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`voice-preview-btn ${activePreviewURI === danielAlternative.voiceURI ? 'playing' : ''}`}
+                  onClick={(e) => handlePreview(danielAlternative, e)}
+                  title="Listen to sample"
+                  aria-label={`Listen to sample of ${danielAlternative.name}`}
+                >
+                  {activePreviewURI === danielAlternative.voiceURI ? <FaVolumeUp /> : <FaPlay />}
+                  <span>{activePreviewURI === danielAlternative.voiceURI ? 'Playing...' : 'Preview'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {filteredVoices.length === 0 ? (
             <div className="voice-empty-state">
               <p>No extra voices found for this accent on your system. Using default English speaker.</p>
