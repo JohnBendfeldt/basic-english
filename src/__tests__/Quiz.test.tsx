@@ -10,19 +10,19 @@ window.HTMLMediaElement.prototype.pause = vi.fn();
 
 const sampleData = {
   alphabet: [
-    { character: 'А', pronunciation: 'ah', example: 'автобус' },
-    { character: 'Б', pronunciation: 'beh', example: 'билет' },
-    { character: 'В', pronunciation: 'veh', example: 'вода' },
+    { letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple, Ant' },
+    { letter: 'B', character: 'B', pronunciation: '/biː/', example: 'as in Book, Boy' },
+    { letter: 'C', character: 'C', pronunciation: '/siː/', example: 'as in Cat, Car' },
   ],
   basicPhrases: [
-    { english: 'Hello', russian: 'Привет', pronunciation: 'pree-vyet' },
-    { english: 'Thank you', russian: 'Спасибо', pronunciation: 'spuh-see-buh' },
+    { phrase: 'Hello', meaning: 'Universal friendly greeting', pronunciation: '/həˈloʊ/' },
+    { phrase: 'Thank you', meaning: 'Polite expression of gratitude', pronunciation: '/θæŋk juː/' },
   ],
   numbers: [
-    { english: 'One', russian: 'Один', pronunciation: 'ah-deen' },
+    { phrase: 'One', meaning: '1', pronunciation: '/wʌn/' },
   ],
   commonWords: [
-    { english: 'Cat', russian: 'Кот', pronunciation: 'kot' },
+    { phrase: 'Water', meaning: 'Essential clear liquid to drink', pronunciation: '/ˈwɔːtər/' },
   ],
 };
 
@@ -63,13 +63,13 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('excludes mastered words (masteryLevel >= 5) from active questions', async () => {
-    // Mock getMasteredWordIds to return 'alphabet-А' as already mastered
-    vi.spyOn(ProgressService, 'getMasteredWordIds').mockResolvedValue(new Set(['alphabet-А']));
+    // Mock getMasteredWordIds to return 'alphabet-A' as already mastered
+    vi.spyOn(ProgressService, 'getMasteredWordIds').mockResolvedValue(new Set(['alphabet-A']));
 
     render(<Quiz data={{
       alphabet: [
-        { character: 'А', pronunciation: 'ah' },
-        { character: 'Б', pronunciation: 'beh' }
+        { letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple' },
+        { letter: 'B', character: 'B', pronunciation: '/biː/', example: 'as in Book' }
       ]
     }} />);
 
@@ -78,10 +78,10 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
       expect(screen.getByText(/Mastered:/i)).toBeInTheDocument();
     });
 
-    // The prompt should be Б, NOT the mastered А
+    // The prompt should be B, NOT the mastered A
     const prompt = document.querySelector('.quiz-prompt');
-    expect(prompt?.textContent).toContain('Б');
-    expect(prompt?.textContent).not.toContain('А');
+    expect(prompt?.textContent).toContain('B');
+    expect(prompt?.textContent).not.toContain('A');
   });
 
   it('finishes session and shows Done recap card when goal questions answered', async () => {
@@ -89,14 +89,14 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
       id: 'session_1',
       userId: 'guest',
       category: 'mixed',
-      score: 1,
-      totalQuestions: 1,
+      score: 5,
+      totalQuestions: 5,
       percentage: 100,
       completedAt: new Date().toISOString()
     });
 
     render(<Quiz data={{
-      alphabet: [{ character: 'А', pronunciation: 'ah' }]
+      alphabet: [{ letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple' }]
     }} />);
 
     // Switch goal to 5
@@ -106,7 +106,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     // Answer questions 1 through 5
     for (let i = 1; i <= 5; i++) {
       const input = screen.getByPlaceholderText(/Your answer here/i);
-      fireEvent.change(input, { target: { value: 'ah' } });
+      fireEvent.change(input, { target: { value: 'apple' } });
       fireEvent.click(screen.getByRole('button', { name: 'Check Answer' }));
 
       if (i < 5) {
@@ -143,10 +143,10 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('accepts conversational synonyms and contractions for English phrases (e.g., wheres the restroom for where is the bathroom)', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.2); // Selects 'What does this mean in English?'
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Audio mode
     render(<Quiz data={{
       basicPhrases: [
-        { english: 'Where is the bathroom', russian: 'Где туалет', pronunciation: 'gdye too-ah-lyet' }
+        { phrase: 'Where is the bathroom', meaning: 'Asking politely for the restroom', pronunciation: '/wɛər ɪz ðə ˈbɑːθruːm/' }
       ]
     }} />);
 
@@ -161,7 +161,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
 
   it('renders the fluid bottom feedback drawer on answer check', async () => {
     render(<Quiz data={{
-      alphabet: [{ character: 'А', pronunciation: 'ah' }]
+      alphabet: [{ letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple' }]
     }} />);
 
     const input = await screen.findByPlaceholderText(/Your answer here/i);
@@ -177,10 +177,10 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('renders dialogue cloze mode with Speaker A and Speaker B bubbles for English phrases and accepts missing word', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Picks isRussianToEnglish: true direction
+    vi.spyOn(Math, 'random').mockReturnValue(0.01);
     render(<Quiz data={{
       basicPhrases: [
-        { russian: 'You are welcome', english: 'Standard polite reply to thank you', pronunciation: '/jʊər ˈwɛlkəm/' }
+        { phrase: 'You are welcome', meaning: 'Standard polite reply to thank you', pronunciation: '/jʊər ˈwɛlkəm/' }
       ]
     }} />);
 
@@ -200,10 +200,10 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('renders audio dictation mode with Play Audio and Slow buttons for English phrases', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Picks isRussianToEnglish: false direction (Audio Dictation)
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // Picks Audio Dictation
     render(<Quiz data={{
       basicPhrases: [
-        { russian: 'Good morning', english: 'Polite greeting used from dawn until 12:00 PM', pronunciation: '/ɡʊd ˈmɔːrnɪŋ/' }
+        { phrase: 'Good morning', meaning: 'Polite greeting used from dawn until 12:00 PM', pronunciation: '/ɡʊd ˈmɔːrnɪŋ/' }
       ]
     }} />);
 
@@ -226,7 +226,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.99); // Audio mode
     render(<Quiz data={{
       basicPhrases: [
-        { russian: 'I would like a coffee, please', english: 'Ordering a beverage politely at a cafe', pronunciation: '/aɪ wʊd laɪk ə ˈkɒfi pliːz/' }
+        { phrase: 'I would like a coffee, please', meaning: 'Ordering a beverage politely at a cafe', pronunciation: '/aɪ wʊd laɪk ə ˈkɒfi pliːz/' }
       ]
     }} />);
 
@@ -241,7 +241,7 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.99); // Digits to Words mode
     render(<Quiz data={{
       numbers: [
-        { russian: 'Twelve', english: '12 (a dozen)', pronunciation: '/twɛlv/' }
+        { phrase: 'Twelve', meaning: '12 (a dozen)', pronunciation: '/twɛlv/' }
       ]
     }} />);
 
@@ -258,5 +258,3 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
   });
 });
-
-

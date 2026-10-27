@@ -1,8 +1,10 @@
 import { QuizSession, WordProgress, UserStats } from '../types/progress';
 import { supabase } from './supabaseClient';
 
-const LOCAL_STORAGE_SESSIONS_KEY = 'russian_quiz_sessions';
-const LOCAL_STORAGE_WORDS_KEY = 'russian_word_progress';
+const LOCAL_STORAGE_SESSIONS_KEY = 'english_quiz_sessions';
+const LOCAL_STORAGE_WORDS_KEY = 'english_word_progress';
+const LEGACY_STORAGE_SESSIONS_KEY = 'russian_quiz_sessions';
+const LEGACY_STORAGE_WORDS_KEY = 'russian_word_progress';
 
 const getGuestUserId = (): string => 'guest_user';
 
@@ -12,7 +14,15 @@ const getGuestUserId = (): string => 'guest_user';
 
 const getLocalSessions = (): QuizSession[] => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
+    let raw = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
+    if (!raw) {
+      // Migrate legacy guest data if present
+      raw = localStorage.getItem(LEGACY_STORAGE_SESSIONS_KEY);
+      if (raw) {
+        localStorage.setItem(LOCAL_STORAGE_SESSIONS_KEY, raw);
+        localStorage.removeItem(LEGACY_STORAGE_SESSIONS_KEY);
+      }
+    }
     return raw ? JSON.parse(raw) : [];
   } catch (err) {
     console.warn('Failed to parse local quiz sessions:', err);
@@ -30,7 +40,15 @@ const saveLocalSessions = (sessions: QuizSession[]) => {
 
 const getLocalWordProgress = (): Record<string, WordProgress> => {
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_WORDS_KEY);
+    let raw = localStorage.getItem(LOCAL_STORAGE_WORDS_KEY);
+    if (!raw) {
+      // Migrate legacy guest data if present
+      raw = localStorage.getItem(LEGACY_STORAGE_WORDS_KEY);
+      if (raw) {
+        localStorage.setItem(LOCAL_STORAGE_WORDS_KEY, raw);
+        localStorage.removeItem(LEGACY_STORAGE_WORDS_KEY);
+      }
+    }
     return raw ? JSON.parse(raw) : {};
   } catch (err) {
     console.warn('Failed to parse local word progress:', err);

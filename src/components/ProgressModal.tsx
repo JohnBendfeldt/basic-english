@@ -116,7 +116,7 @@ export const ProgressModal: React.FC<ProgressModalProps> = ({ isOpen, onClose, u
                   {stats.wordsToReview.map((item) => (
                     <div key={item.wordId} className="review-word-card">
                       <div className="review-word-info">
-                        <span className="russian-text">{item.prompt}</span>
+                        <span className="phrase-text target-text">{item.prompt}</span>
                         <span className="english-translation">{item.answer}</span>
                       </div>
 

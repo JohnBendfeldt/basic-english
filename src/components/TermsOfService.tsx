@@ -25,7 +25,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onNavigate }) => {
         <p>By accessing or using <strong>Basic English</strong> (located at <a href="https://basicenglish.school">basicenglish.school</a>), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>
 
         <h2>2. Purpose of the Service</h2>
-        <p>Basic English is provided as an interactive, educational language learning resource designed to help users practice Russian Cyrillic, pronunciation, numbers, common words, and survival phrases. The service is provided free of charge for personal, non-commercial educational use.</p>
+        <p>Basic English is provided as an interactive, educational language learning resource designed to help users practice the English alphabet &amp; phonics, pronunciation, numbers, common vocabulary, and essential phrases. The service is provided free of charge for personal, non-commercial educational use.</p>
 
         <h2>3. User Accounts &amp; Acceptable Use</h2>
         <p>You may use Basic English without an account (Guest Mode) or sign in via Google OAuth or Microsoft Entra ID to save your learning history. When using the service, you agree not to:</p>
