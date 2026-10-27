@@ -2,6 +2,7 @@
  * Utility functions for text-to-speech using browser speech synthesis for Basic English
  */
 import { 
+  unlockIOSAudio,
   speakEnglishText, 
   isSpeechSupported as isBrowserSpeechSupported,
   initVoices as initBrowserVoices,
@@ -134,6 +135,7 @@ export const cancelAllSpeech = (): void => {
 };
 
 export {
+  unlockIOSAudio,
   getFriendlyEnglishVoices,
   setPreferredVoice,
   setPreferredAccent,
@@ -148,6 +150,7 @@ export {
 };
 
 const speechUtils = {
+  unlockIOSAudio,
   isSpeechSupported,
   speak,
   initVoices,

@@ -154,7 +154,7 @@ describe('Browser Speech Synthesis - Voice Scoring & Discovery', () => {
     expect(bestVoice?.name).not.toContain('Ava');
   });
 
-  it('automatically picks Daniel (en-GB) over robotic compact Samantha when Samantha is the only US voice', () => {
+  it('respects American accent and picks Samantha when Samantha is the available US voice', () => {
     const samantha = createMockVoice('Samantha', 'en-US');
     const daniel = createMockVoice('Daniel', 'en-GB');
 
@@ -168,7 +168,30 @@ describe('Browser Speech Synthesis - Voice Scoring & Discovery', () => {
 
     const bestVoice = getBestEnglishVoice('en-US');
     expect(bestVoice).not.toBeNull();
-    expect(bestVoice?.name).toBe('Daniel');
+    expect(bestVoice?.name).toBe('Samantha');
+
+    const ukVoice = getBestEnglishVoice('en-GB');
+    expect(ukVoice?.name).toBe('Daniel');
+  });
+
+  it('deduplicates voices with identical base name and keeps the enhanced quality version', () => {
+    const samanthaCompact = createMockVoice('Samantha', 'en-US');
+    const samanthaEnhanced = createMockVoice('Samantha (Enhanced)', 'en-US');
+    const danielCompact = createMockVoice('Daniel', 'en-GB');
+    const danielEnhanced = createMockVoice('Daniel (Enhanced)', 'en-GB');
+
+    vi.stubGlobal('speechSynthesis', {
+      getVoices: () => [samanthaCompact, samanthaEnhanced, danielCompact, danielEnhanced],
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+      speaking: false
+    });
+
+    const friendly = getFriendlyEnglishVoices();
+    expect(friendly.length).toBe(2);
+    expect(friendly.some(v => v.name === 'Samantha (Enhanced)')).toBe(true);
+    expect(friendly.some(v => v.name === 'Daniel (Enhanced)')).toBe(true);
   });
 
   it('keeps Google US English (Studio AI) over Daniel when Google voice is present', () => {

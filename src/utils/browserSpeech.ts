@@ -23,6 +23,57 @@ let currentVoiceURI: string | null = null;
 // Track voices that failed during runtime playback so we never retry broken voices
 const failedVoiceURIs = new Set<string>();
 
+// Keep a persistent reference to the active utterance to prevent WebKit garbage collection
+let activeUtterance: SpeechSynthesisUtterance | null = null;
+if (typeof window !== 'undefined') {
+  (window as any).__activeUtterance = null;
+}
+
+// Global audio unlocked flag for iOS WebKit
+let isAudioContextUnlocked = false;
+
+/**
+ * Prime and unlock iOS WebKit audio subsystem.
+ * iOS mutes speech synthesis if the audio session isn't in 'playback' mode
+ * or if the Web Audio pipeline is suspended.
+ */
+export const unlockIOSAudio = (): void => {
+  if (typeof window === 'undefined') return;
+
+  // Modern iOS WebKit (iOS 15+) AudioSession API
+  try {
+    if ('audioSession' in navigator && (navigator as any).audioSession) {
+      (navigator as any).audioSession.type = 'playback';
+    }
+  } catch (e) {
+    // Ignore audioSession configuration errors
+  }
+
+  // Prime Web Audio Context to wake up the iOS hardware audio pipeline
+  if (!isAudioContextUnlocked) {
+    try {
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtxClass) {
+        const ctx = new AudioCtxClass();
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        // Play an inaudible 1-sample buffer to complete hardware initialization
+        try {
+          const buffer = ctx.createBuffer(1, 1, 22050);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start(0);
+        } catch (e) {}
+      }
+      isAudioContextUnlocked = true;
+    } catch (e) {
+      // Ignore context errors
+    }
+  }
+};
+
 /**
  * Check if a voice name represents a known broken voice on specific browser engines.
  * Notably, Microsoft Ava Online (Natural) in Microsoft Edge has a known bug in Edge's
@@ -178,17 +229,60 @@ export const scoreVoice = (voice: SpeechSynthesisVoice): number => {
 };
 
 /**
- * Get all available English voices from the browser
+ * Normalize a voice name to its base speaker identity (e.g. "Samantha (Enhanced)" -> "samantha")
+ */
+export const getVoiceBaseKey = (voice: SpeechSynthesisVoice): string => {
+  // Extract base name by stripping parentheticals like (Enhanced), (Compact), (Natural), locale tags
+  const baseName = voice.name
+    .replace(/\s*\([^)]*\)/g, '')
+    .trim()
+    .toLowerCase();
+
+  // Normalize lang to first 2-5 chars (e.g. 'en-us', 'en-gb')
+  const langKey = voice.lang.toLowerCase().replace('_', '-').slice(0, 5);
+  return `${baseName}_${langKey}`;
+};
+
+/**
+ * Deduplicate voices: When multiple voice records share the same base speaker name & accent
+ * (such as iOS WebKit providing both "Samantha" compact and "Samantha (Enhanced)", or duplicate
+ * system/TTS bundle entries), choose the highest-scoring/enhanced voice and drop duplicates.
+ */
+export const deduplicateVoices = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] => {
+  const map = new Map<string, SpeechSynthesisVoice>();
+
+  for (const voice of voices) {
+    const key = getVoiceBaseKey(voice);
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, voice);
+    } else {
+      // If the new voice has a higher score (e.g. Enhanced over Compact), replace it
+      if (scoreVoice(voice) > scoreVoice(existing)) {
+        map.set(key, voice);
+      } else if (scoreVoice(voice) === scoreVoice(existing) && voice.default && !existing.default) {
+        map.set(key, voice);
+      }
+    }
+  }
+
+  return Array.from(map.values());
+};
+
+/**
+ * Get all available English voices from the browser, deduplicated to remove iOS/WebKit duplicates
  */
 export const getEnglishVoices = (): SpeechSynthesisVoice[] => {
   if (typeof window === 'undefined' || !window.speechSynthesis) return [];
-  const voices = window.speechSynthesis.getVoices();
-  return voices.filter(v => v.lang.toLowerCase().startsWith('en'));
+  const rawVoices = window.speechSynthesis.getVoices();
+  const englishVoices = rawVoices.filter(v => v.lang.toLowerCase().startsWith('en'));
+  return deduplicateVoices(englishVoices);
 };
 
 /**
  * Get only friendly, high-quality English voices (excluding novelty/broken voices),
- * sorted from highest to lowest quality.
+ * deduplicated and sorted from highest to lowest quality.
  */
 export const getFriendlyEnglishVoices = (): SpeechSynthesisVoice[] => {
   const allEnglish = getEnglishVoices();
@@ -347,34 +441,28 @@ export const getBestEnglishVoice = (accent: EnglishAccent = getPreferredAccent()
 
   // 2. Check if there are voices matching the requested accent
   const accentMatches = friendly.filter(v => v.lang.toLowerCase().replace('_', '-').startsWith(accent.toLowerCase()));
-  const hasNeuralMatch = accentMatches.some(v => isNeuralVoice(v));
-
-  // If we have a genuine Studio AI voice for this accent (e.g. Google US English, Jenny, Aria), use it!
-  if (hasNeuralMatch) {
-    return accentMatches[0];
-  }
-
-  // 3. Natural Fallback: If no neural voice exists for American English (e.g. only robotic compact Samantha exists),
-  // prefer Daniel (en-GB). Daniel has far more human, natural articulation than Stephen Hawking-like compact Samantha.
-  const danielVoice = friendly.find(v => v.name.toLowerCase().includes('daniel'));
-  if (danielVoice && (!accentMatches[0] || !isNeuralVoice(accentMatches[0]))) {
-    return danielVoice;
-  }
-
-  // 4. Fallback to best matching voice for accent
   if (accentMatches.length > 0) {
     return accentMatches[0];
   }
 
-  // 5. Fallback to top-scoring friendly voice overall
+  // 3. Fallback: If no voice exists for the requested accent, check for Daniel (natural UK fallback)
+  const danielVoice = friendly.find(v => v.name.toLowerCase().includes('daniel'));
+  if (danielVoice) {
+    return danielVoice;
+  }
+
+  // 4. Fallback to top-scoring friendly voice overall
   return friendly[0] || allEnglish.find(v => !failedVoiceURIs.has(v.voiceURI)) || allEnglish[0] || null;
 };
 
 /**
  * Speak English text using native browser speech synthesis.
- * Includes automatic recovery fallback: if an online/specific voice fails
- * (e.g. Edge network drop or buggy synthesis), it immediately retries
- * with a reliable system voice so the learner never experiences silence.
+ * Fully hardened for iOS WebKit & Chrome on iPhone:
+ * - Unlocks iOS audio session & Web Audio pipeline on touch
+ * - Retains active utterance reference to prevent WebKit garbage-collection abortion
+ * - Guarantees voice & utterance language compatibility
+ * - Avoids premature cancel() collisions
+ * - Includes automatic fallback recovery
  */
 export const speakEnglishText = (
   text: string,
@@ -387,16 +475,21 @@ export const speakEnglishText = (
     return;
   }
 
-  // Cancel any currently speaking utterance
-  try {
-    window.speechSynthesis.cancel();
-  } catch (e) {
-    // Ignore cancel errors
-  }
-
   if (!text || !text.trim()) {
     if (onEnd) onEnd();
     return;
+  }
+
+  // Ensure iOS WebKit audio subsystem is unlocked
+  unlockIOSAudio();
+
+  // Only cancel if speech is currently active or pending to avoid iOS WebKit state machine freeze
+  if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      // Ignore cancel errors
+    }
   }
 
   const accent = options?.accent || getPreferredAccent();
@@ -414,21 +507,37 @@ export const speakEnglishText = (
 
   const attemptSpeak = (chosenVoice: SpeechSynthesisVoice | null, isRetry = false) => {
     const utterance = new SpeechSynthesisUtterance(text.trim());
-    utterance.lang = accent;
+    
+    // On iOS WebKit, utterance.lang MUST match the voice's language to prevent silent failures
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
+      utterance.lang = chosenVoice.lang || accent;
+    } else {
+      utterance.lang = accent;
+    }
+
     utterance.rate = rate;
     utterance.pitch = pitch;
 
-    if (chosenVoice) {
-      utterance.voice = chosenVoice;
+    // Retain global reference to avoid WebKit garbage collection terminating speech mid-sentence
+    activeUtterance = utterance;
+    if (typeof window !== 'undefined') {
+      (window as any).__activeUtterance = utterance;
     }
 
     let completed = false;
-    let speechWatchdog: ReturnType<typeof setTimeout> | null = null;
+    let speechWatchdog: ReturnType<typeof setInterval> | null = null;
 
     const cleanup = () => {
       if (speechWatchdog) {
-        clearTimeout(speechWatchdog);
+        clearInterval(speechWatchdog);
         speechWatchdog = null;
+      }
+      if (activeUtterance === utterance) {
+        activeUtterance = null;
+        if (typeof window !== 'undefined') {
+          (window as any).__activeUtterance = null;
+        }
       }
     };
 
@@ -483,16 +592,20 @@ export const speakEnglishText = (
       }
     };
 
-    // Chromium/Edge speech synthesis keep-alive guard
-    speechWatchdog = setTimeout(() => {
-      if (!completed && window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+    // Chromium & WebKit speech synthesis keep-alive guard
+    speechWatchdog = setInterval(() => {
+      if (completed) {
+        cleanup();
+        return;
+      }
+      if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
-    }, 2500);
+    }, 250);
 
     window.speechSynthesis.speak(utterance);
 
-    // If Chromium starts paused, unpause immediately
+    // If browser starts paused, unpause immediately
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
     }
@@ -561,6 +674,7 @@ export const initVoices = async (): Promise<void> => {
 };
 
 const browserSpeech = {
+  unlockIOSAudio,
   speakEnglishText,
   cancelAllSpeech,
   previewVoice,
