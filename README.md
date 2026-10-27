@@ -34,7 +34,7 @@ Built with modern web performance in mind, it provides instant speech pronunciat
   * Card reveal modes ("Tap to reveal/hide") for flashcard self-testing.
 * **📱 Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Workbox and modern Service Workers.
 * **🎨 Modern Educational Aesthetic**: Styled with an inviting Indigo and Sky Blue color palette, clean typography (`Plus Jakarta Sans` & `Outfit`), and smooth micro-interactions.
-* **⚡ Dual-App Local Development**: Configured to run on local port `5174` so it can be developed and run simultaneously alongside sister applications (e.g., Russian learning app on `5173`).
+* **⚡ Dual-App Local Development**: Configured to run on local port `5174` so it can be developed and run simultaneously alongside sister applications (e.g., Basic Russian on `5173`).
 
 ---
 

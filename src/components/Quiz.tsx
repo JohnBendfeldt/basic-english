@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FaCheck, FaTimes, FaKeyboard, FaTrophy, FaRedo, FaCheckCircle, FaTimesCircle, FaStar, FaGraduationCap, FaVolumeUp } from 'react-icons/fa';
-import RussianKeyboard from './RussianKeyboard';
+import { FaCheck, FaTimes, FaTrophy, FaRedo, FaCheckCircle, FaTimesCircle, FaStar, FaGraduationCap, FaVolumeUp } from 'react-icons/fa';
 import PronunciationButton from './PronunciationButton';
-import { transliterate, containsCyrillic } from '../utils/transliteration';
 import { ProgressService } from '../services/progressService';
 import { speak } from '../utils/speech';
 
@@ -12,13 +10,17 @@ interface AlphabetItem {
   letter?: string;
   pronunciation: string;
   example?: string;
+  word?: string;
   russianWord?: string;
+  meaning?: string;
   englishWord?: string;
 }
 
 interface PhraseItem {
-  english: string;
-  russian: string;
+  phrase?: string;
+  russian?: string;
+  meaning?: string;
+  english?: string;
   pronunciation?: string;
 }
 
@@ -34,7 +36,7 @@ interface QuizProps {
 
 interface QuestionDef {
   item: AlphabetItem | PhraseItem;
-  isRussianToEnglish: boolean;
+  isPrimaryDirection: boolean;
   id: string;
   category: string;
 }
@@ -287,19 +289,6 @@ const findDialogue = (phrase: string) => {
   return null;
 };
 
-// Constants for special characters
-const SOFT_SIGN_CHARS = ['Ь', 'ь'];
-const HARD_SIGN_CHARS = ['Ъ', 'ъ'];
-
-const isSoftSign = (char: string): boolean => SOFT_SIGN_CHARS.includes(char);
-const isHardSign = (char: string): boolean => HARD_SIGN_CHARS.includes(char);
-const isSoftSignAnswer = (answer: string): boolean => 
-  ['soft sign', 'soft'].includes(answer.toLowerCase().trim());
-const isHardSignAnswer = (answer: string): boolean => 
-  ['hard sign', 'hard'].includes(answer.toLowerCase().trim());
-
-const CYRILLIC_QUICK_CHARS = ['я', 'ю', 'ё', 'ж', 'ш', 'щ', 'ч', 'ь', 'ъ', 'ы', 'э'];
-
 const getAudioCategory = (questionType: string): 'alphabet' | 'phrases' | 'numbers' | 'words' | 'examples' => {
   switch (questionType) {
     case 'alphabet':
@@ -343,14 +332,10 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const [userAnswer, setUserAnswer] = useState('');
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showNext, setShowNext] = useState(false);
-  const [showKeyboard, setShowKeyboard] = useState(false);
-  const [showPhoneticGuide, setShowPhoneticGuide] = useState(false);
   const correctSoundRef = useRef<HTMLAudioElement | null>(null);
   const incorrectSoundRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [_lastInput, setLastInput] = useState('');
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [spellingDiff, setSpellingDiff] = useState<Array<{ char: string; isDiff: boolean }> | null>(null);
 
   // Ref to track questions asked in current rotation
   const askedQuestionsRef = useRef<Set<string>>(new Set());
@@ -397,14 +382,6 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       .replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, "")
       .replace(/\s+/g, " ")
       .trim();
-    normalized = normalized
-      .replace(/c(?=[а-яёА-ЯЁ])/g, 'с')
-      .replace(/a(?=[а-яёА-ЯЁ])/g, 'а')
-      .replace(/e(?=[а-яёА-ЯЁ])/g, 'е')
-      .replace(/o(?=[а-яёА-ЯЁ])/g, 'о')
-      .replace(/p(?=[а-яёА-ЯЁ])/g, 'р')
-      .replace(/x(?=[а-яёА-ЯЁ])/g, 'х')
-      .replace(/y(?=[а-яёА-ЯЁ])/g, 'у');
     return normalized;
   };
 
@@ -541,14 +518,6 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     return matrix[a.length][b.length];
   };
 
-  const getSpellingDifferences = (userInput: string, correctAnswer: string): Array<{ char: string; isDiff: boolean }> => {
-    if (!containsCyrillic(correctAnswer)) return [];
-    return correctAnswer.split('').map((char, i) => ({
-      char,
-      isDiff: i >= userInput.length || userInput[i] !== char
-    }));
-  };
-
   // Build the complete list of all 209 curriculum questions
   const getAllQuestions = useCallback((): QuestionDef[] => {
     if (!data) return [];
@@ -556,10 +525,11 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
     if (data.alphabet && Array.isArray(data.alphabet)) {
       data.alphabet.forEach(item => {
+        const char = item.character || item.letter || '';
         questions.push({
           item,
-          isRussianToEnglish: true,
-          id: `alphabet-${item.character}`,
+          isPrimaryDirection: true,
+          id: `alphabet-${char}`,
           category: 'alphabet'
         });
       });
@@ -569,16 +539,18 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     categories.forEach(cat => {
       if (data[cat] && Array.isArray(data[cat])) {
         data[cat].forEach((item: PhraseItem) => {
+          const phraseText = item.phrase || item.russian || '';
+          const meaningText = item.meaning || item.english || '';
           questions.push({
             item,
-            isRussianToEnglish: true,
-            id: `${cat}-${item.russian}-to-en`,
+            isPrimaryDirection: true,
+            id: `${cat}-${phraseText}-to-meaning`,
             category: cat
           });
           questions.push({
             item,
-            isRussianToEnglish: false,
-            id: `${cat}-${item.english}-to-ru`,
+            isPrimaryDirection: false,
+            id: `${cat}-${meaningText}-to-phrase`,
             category: cat
           });
         });
@@ -616,7 +588,6 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     setUserAnswer('');
     setIsCorrect(null);
     setShowNext(false);
-    setSpellingDiff(null);
     setIsWordJustMastered(false);
 
     if (!data) return;
@@ -665,277 +636,195 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const pronunciation = item.pronunciation?.toString() || '';
         const example = item.example?.toString() || '';
 
-        // If Cyrillic letter (e.g. from Russian app test suite), preserve exact test expectation
-        if (containsCyrillic(character)) {
-          const validAnswers = [pronunciation.toLowerCase(), character.toLowerCase()];
+        // English alphabet (A-Z)
+        const exampleWords = example
+          .replace(/^as in\s+/i, '')
+          .split(/[,/&]/)
+          .map(w => w.trim().toLowerCase())
+          .filter(w => w.length > 0);
+
+        const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
+        if (pronunciation && !pronunciation.includes('/')) {
+          validAnswers.push(pronunciation.toLowerCase());
+        }
+
+        const primaryExample = exampleWords[0] || 'apple';
+
+        if (selected.isPrimaryDirection) {
+          // Visual Letter Phonics
           setCurrentQuestion({
             type: 'alphabet',
             prompt: character,
             answer: validAnswers.join(' / '),
-            hint: pronunciation ? `What sound does this letter make? (${pronunciation})` : 'Type this letter:',
+            hint: `Phonics sound: ${pronunciation} — Type letter (${character}) or example word (${primaryExample}):`,
             russian: character,
-            id: selected.id
+            id: selected.id,
+            badge: '🔤 Alphabet Phonics',
+            audioText: `${character}. as in ${primaryExample}`
           });
         } else {
-          // English alphabet (A-Z)
-          const exampleWords = example
-            .replace(/^as in\s+/i, '')
-            .split(/[,/&]/)
-            .map(w => w.trim().toLowerCase())
-            .filter(w => w.length > 0);
-
-          const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
-          if (pronunciation && !pronunciation.includes('/')) {
-            validAnswers.push(pronunciation.toLowerCase());
-          }
-
-          const primaryExample = exampleWords[0] || 'apple';
-
-          if (selected.isRussianToEnglish) {
-            // Phonics Listen & Type Mode
-            setCurrentQuestion({
-              type: 'alphabet',
-              prompt: `🎧 Letter Sound: "${character}"`,
-              answer: validAnswers.join(' / '),
-              hint: `Listen to the phonics sound and type the letter (${character}) or example word (${primaryExample}):`,
-              russian: character,
-              id: selected.id,
-              badge: '🎧 Phonics & Sound',
-              isAudioMode: true,
-              audioText: `${primaryExample}. Letter ${character}.`
-            });
-          } else {
-            // Visual Letter Phonics
-            setCurrentQuestion({
-              type: 'alphabet',
-              prompt: character,
-              answer: validAnswers.join(' / '),
-              hint: `Phonics sound: ${pronunciation} — Type letter (${character}) or example word (${primaryExample}):`,
-              russian: character,
-              id: selected.id,
-              badge: '🔤 Alphabet Phonics',
-              audioText: `${character}. as in ${primaryExample}`
-            });
-          }
+          // Phonics Listen & Type Mode
+          setCurrentQuestion({
+            type: 'alphabet',
+            prompt: `🎧 Letter Sound: "${character}"`,
+            answer: validAnswers.join(' / '),
+            hint: `Listen to the phonics sound and type the letter (${character}) or example word (${primaryExample}):`,
+            russian: character,
+            id: selected.id,
+            badge: '🎧 Phonics & Sound',
+            isAudioMode: true,
+            audioText: `${primaryExample}. Letter ${character}.`
+          });
         }
       } else if (selected.category === 'numbers') {
         const item = selected.item as PhraseItem;
-        const wordForm = item.russian?.toString() || '';
-        const digitRaw = item.english?.toString() || '';
+        const wordForm = (item.phrase || item.russian || '').toString();
+        const digitRaw = (item.meaning || item.english || '').toString();
         const digitsOnly = digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw;
 
-        if (containsCyrillic(wordForm)) {
-          if (selected.isRussianToEnglish) {
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: wordForm,
-              answer: digitsOnly,
-              hint: 'Type this number in digits:',
-              russian: wordForm,
-              id: selected.id
-            });
-          } else {
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: digitsOnly,
-              answer: wordForm.toLowerCase(),
-              hint: 'How do you say this number in Russian?',
-              russian: wordForm,
-              id: selected.id
-            });
-          }
+        // English numbers
+        if (selected.isPrimaryDirection) {
+          // Words to Digits
+          setCurrentQuestion({
+            type: selected.category,
+            prompt: wordForm,
+            answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
+            hint: `Type this number in digits (e.g. ${digitsOnly}):`,
+            russian: wordForm,
+            id: selected.id,
+            badge: '🔢 Digits',
+            audioText: wordForm
+          });
         } else {
-          // English numbers
-          if (selected.isRussianToEnglish) {
-            // Words to Digits
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: wordForm,
-              answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
-              hint: `Type this number in digits (e.g. ${digitsOnly}):`,
-              russian: wordForm,
-              id: selected.id,
-              badge: '🔢 Digits',
-              audioText: wordForm
-            });
-          } else {
-            // Digits to English Words
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: digitsOnly,
-              answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
-              hint: `Spell this number in English words (${wordForm.length} letters):`,
-              russian: wordForm,
-              id: selected.id,
-              badge: '🔢 Number Spelling',
-              audioText: wordForm
-            });
-          }
+          // Digits to English Words
+          setCurrentQuestion({
+            type: selected.category,
+            prompt: digitsOnly,
+            answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
+            hint: `Spell this number in English words (${wordForm.length} letters):`,
+            russian: wordForm,
+            id: selected.id,
+            badge: '🔢 Number Spelling',
+            audioText: wordForm
+          });
         }
       } else if (selected.category === 'basicPhrases') {
         const item = selected.item as PhraseItem;
-        const phrase = item.russian?.toString() || '';
-        const situation = item.english?.toString() || '';
+        const phrase = (item.phrase || item.russian || '').toString();
+        const situation = (item.meaning || item.english || '').toString();
 
-        // If phrase is Russian Cyrillic (e.g. from Russian app test data), test English translation
-        if (containsCyrillic(phrase)) {
-          if (selected.isRussianToEnglish) {
+        if (selected.isPrimaryDirection) {
+          // Conversational Dialogue Cloze Completion
+          const dialogue = findDialogue(phrase);
+          if (dialogue) {
+            const cleanMissing = dialogue.missingWord.replace(/[.,!?;:]/g, '');
+            const firstLetter = cleanMissing.charAt(0);
+            const slots = '_'.repeat(Math.max(1, cleanMissing.length - 1));
+            const clozeDisplay = `${firstLetter}${slots}`;
+
             setCurrentQuestion({
               type: selected.category,
-              prompt: phrase,
-              answer: situation.toLowerCase(),
-              hint: 'What does this mean in English?',
-              russian: phrase,
-              id: selected.id
-            });
-          } else {
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: situation,
-              answer: phrase.toLowerCase(),
-              hint: 'How do you say this in Russian?',
-              russian: phrase,
-              id: selected.id
-            });
-          }
-        } else {
-          // English learning app data
-          if (selected.isRussianToEnglish) {
-            // Conversational Dialogue Cloze Completion
-            const dialogue = findDialogue(phrase);
-            if (dialogue) {
-              const cleanMissing = dialogue.missingWord.replace(/[.,!?;:]/g, '');
-              const firstLetter = cleanMissing.charAt(0);
-              const slots = '_'.repeat(Math.max(1, cleanMissing.length - 1));
-              const clozeDisplay = `${firstLetter}${slots}`;
-
-              setCurrentQuestion({
-                type: selected.category,
-                prompt: `A: "${dialogue.speakerA}" | B: "${dialogue.speakerBPrefix} ${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
-                answer: `${cleanMissing.toLowerCase()} / ${phrase.toLowerCase()}`,
-                hint: `Complete Speaker B's reply (${cleanMissing.length} letters):`,
-                russian: phrase,
-                id: selected.id,
-                badge: '💬 Complete the Dialogue',
-                audioText: phrase,
-                dialogue: {
-                  speakerA: dialogue.speakerA,
-                  speakerBPrefix: dialogue.speakerBPrefix,
-                  clozeDisplay,
-                  speakerBSuffix: dialogue.speakerBSuffix,
-                  missingWord: cleanMissing,
-                  contextHint: dialogue.contextHint
-                }
-              });
-            } else {
-              // Dynamic cloze on last word
-              const words = phrase.split(' ');
-              let clozePrompt = phrase;
-              let clozeAnswer = phrase.toLowerCase();
-              let letterNotice = '';
-
-              if (words.length >= 2) {
-                const rawLast = words[words.length - 1];
-                const cleanLast = rawLast.replace(/[.,!?;:]/g, '');
-                const punctuation = rawLast.match(/[.,!?;:]+$/)?.[0] || '';
-                const startWords = words.slice(0, -1).join(' ');
-                const firstLetter = cleanLast.charAt(0);
-                const slots = '_'.repeat(Math.max(1, cleanLast.length - 1));
-                clozePrompt = `${startWords} ${firstLetter}${slots}${punctuation}`;
-                clozeAnswer = `${cleanLast.toLowerCase()} / ${phrase.toLowerCase()}`;
-                letterNotice = ` • ${cleanLast.length} letters`;
-              }
-
-              setCurrentQuestion({
-                type: selected.category,
-                prompt: clozePrompt,
-                answer: clozeAnswer,
-                hint: `Complete the phrase (${situation}${letterNotice}):`,
-                russian: phrase,
-                id: selected.id,
-                badge: '💬 Complete the Phrase',
-                audioText: phrase
-              });
-            }
-          } else {
-            // Listen & Type Audio Dictation Mode
-            const wordCount = phrase.trim().split(/\s+/).length;
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: 'Type what you hear',
-              answer: phrase.toLowerCase(),
-              hint: `Type what you hear (${wordCount} ${wordCount === 1 ? 'word' : 'words'}):`,
+              prompt: `A: "${dialogue.speakerA}" | B: "${dialogue.speakerBPrefix} ${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
+              answer: `${cleanMissing.toLowerCase()} / ${phrase.toLowerCase()}`,
+              hint: `Complete Speaker B's reply (${cleanMissing.length} letters):`,
               russian: phrase,
               id: selected.id,
-              badge: '🎧 Listen & Type',
-              isAudioMode: true,
+              badge: '💬 Complete the Dialogue',
+              audioText: phrase,
+              dialogue: {
+                speakerA: dialogue.speakerA,
+                speakerBPrefix: dialogue.speakerBPrefix,
+                clozeDisplay,
+                speakerBSuffix: dialogue.speakerBSuffix,
+                missingWord: cleanMissing,
+                contextHint: dialogue.contextHint
+              }
+            });
+          } else {
+            // Dynamic cloze on last word
+            const words = phrase.split(' ');
+            let clozePrompt = phrase;
+            let clozeAnswer = phrase.toLowerCase();
+            let letterNotice = '';
+
+            if (words.length >= 2) {
+              const rawLast = words[words.length - 1];
+              const cleanLast = rawLast.replace(/[.,!?;:]/g, '');
+              const punctuation = rawLast.match(/[.,!?;:]+$/)?.[0] || '';
+              const startWords = words.slice(0, -1).join(' ');
+              const firstLetter = cleanLast.charAt(0);
+              const slots = '_'.repeat(Math.max(1, cleanLast.length - 1));
+              clozePrompt = `${startWords} ${firstLetter}${slots}${punctuation}`;
+              clozeAnswer = `${cleanLast.toLowerCase()} / ${phrase.toLowerCase()}`;
+              letterNotice = ` • ${cleanLast.length} letters`;
+            }
+
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: clozePrompt,
+              answer: clozeAnswer,
+              hint: `Complete the phrase (${situation}${letterNotice}):`,
+              russian: phrase,
+              id: selected.id,
+              badge: '💬 Complete the Phrase',
               audioText: phrase
             });
           }
+        } else {
+          // Listen & Type Audio Dictation Mode
+          const wordCount = phrase.trim().split(/\s+/).length;
+          setCurrentQuestion({
+            type: selected.category,
+            prompt: 'Type what you hear',
+            answer: phrase.toLowerCase(),
+            hint: `Type what you hear (${wordCount} ${wordCount === 1 ? 'word' : 'words'}):`,
+            russian: phrase,
+            id: selected.id,
+            badge: '🎧 Listen & Type',
+            isAudioMode: true,
+            audioText: phrase
+          });
         }
       } else {
         // commonWords
         const item = selected.item as PhraseItem;
-        const word = item.russian?.toString() || '';
-        const definition = item.english?.toString() || '';
+        const word = (item.phrase || item.russian || '').toString();
+        const definition = (item.meaning || item.english || '').toString();
 
-        if (containsCyrillic(word)) {
-          if (selected.isRussianToEnglish) {
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: word,
-              answer: definition.toLowerCase(),
-              hint: 'What does this mean in English?',
-              russian: word,
-              id: selected.id
-            });
-          } else {
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: definition,
-              answer: word.toLowerCase(),
-              hint: 'How do you say this in Russian?',
-              russian: word,
-              id: selected.id
-            });
-          }
+        const cleanWord = word.trim();
+        const validTargets = [cleanWord.toLowerCase()];
+        if (cleanWord.toLowerCase().startsWith('to ')) {
+          validTargets.push(cleanWord.slice(3).toLowerCase());
+        }
+        const targetAnswer = validTargets.join(' / ');
+        const firstLetter = cleanWord.charAt(0).toUpperCase();
+
+        if (selected.isPrimaryDirection) {
+          // Mode: Listen & Type Audio Dictation
+          setCurrentQuestion({
+            type: selected.category,
+            prompt: 'Type what you hear',
+            answer: targetAnswer,
+            hint: `Type what you hear (Starts with "${firstLetter}" • ${cleanWord.length} letters):`,
+            russian: cleanWord,
+            id: selected.id,
+            badge: '🎧 Listen & Type',
+            isAudioMode: true,
+            audioText: cleanWord
+          });
         } else {
-          // English vocabulary
-          const cleanWord = word.trim();
-          const validTargets = [cleanWord.toLowerCase()];
-          if (cleanWord.toLowerCase().startsWith('to ')) {
-            validTargets.push(cleanWord.slice(3).toLowerCase());
-          }
-          const targetAnswer = validTargets.join(' / ');
-          const firstLetter = cleanWord.charAt(0).toUpperCase();
-
-          if (selected.isRussianToEnglish) {
-            // Mode: Listen & Type Audio Dictation
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: 'Type what you hear',
-              answer: targetAnswer,
-              hint: `Type what you hear (Starts with "${firstLetter}" • ${cleanWord.length} letters):`,
-              russian: cleanWord,
-              id: selected.id,
-              badge: '🎧 Listen & Type',
-              isAudioMode: true,
-              audioText: cleanWord
-            });
-          } else {
-            // Mode: Meaning and First-Letter Cloze Scaffold
-            const slots = '_'.repeat(Math.max(1, cleanWord.length - 1));
-            setCurrentQuestion({
-              type: selected.category,
-              prompt: definition,
-              answer: targetAnswer,
-              hint: `What is the English word? (${firstLetter}${slots} • ${cleanWord.length} letters):`,
-              russian: cleanWord,
-              id: selected.id,
-              badge: '📖 Vocabulary & Spelling',
-              audioText: cleanWord
-            });
-          }
+          // Mode: Meaning and First-Letter Cloze Scaffold
+          const slots = '_'.repeat(Math.max(1, cleanWord.length - 1));
+          setCurrentQuestion({
+            type: selected.category,
+            prompt: definition,
+            answer: targetAnswer,
+            hint: `What is the English word? (${firstLetter}${slots} • ${cleanWord.length} letters):`,
+            russian: cleanWord,
+            id: selected.id,
+            badge: '📖 Vocabulary & Spelling',
+            audioText: cleanWord
+          });
         }
       }
 
@@ -992,7 +881,6 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     setShowNext(false);
     setUserAnswer('');
     setIsCorrect(null);
-    setSpellingDiff(null);
     setIsWordJustMastered(false);
     sessionStatsRef.current = {
       score: 0,
@@ -1083,21 +971,10 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const checkAnswer = () => {
     if (!userAnswer.trim()) return;
 
-    let processedAnswer = userAnswer;
-    if (needsRussianKeyboard && !containsCyrillic(processedAnswer)) {
-      processedAnswer = transliterate(processedAnswer);
-      setUserAnswer(processedAnswer);
-    }
-
-    const userAnswerNormalized = normalizeText(processedAnswer);
+    const userAnswerNormalized = normalizeText(userAnswer);
     let isAnswerCorrect = false;
 
-    if (isSoftSign(currentQuestion.prompt) && isSoftSignAnswer(userAnswerNormalized)) {
-      isAnswerCorrect = true;
-    } else if (isHardSign(currentQuestion.prompt) && isHardSignAnswer(userAnswerNormalized)) {
-      isAnswerCorrect = true;
-    } else {
-      // Conversational synonym helper for common English scenarios
+    // Conversational synonym helper for common English scenarios
       const checkConversationalEquivalence = (user: string, target: string): boolean => {
         const u = normalizeEnglishPhrase(user);
         const t = normalizeEnglishPhrase(target);
@@ -1237,66 +1114,50 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           break;
         }
 
-        // 3. Russian / Cyrillic matching with Levenshtein tolerance
-        if (containsCyrillic(userAnswerNormalized) || containsCyrillic(targetNormalized)) {
-          const maxErrors = Math.floor(targetNormalized.length / 5) + 1;
-          const distance = levenshteinDistance(userAnswerNormalized, targetNormalized);
-          if (distance <= maxErrors) {
-            isAnswerCorrect = true;
-            if (containsCyrillic(targetNormalized)) {
-              setSpellingDiff(getSpellingDifferences(userAnswerNormalized, targetNormalized));
-            } else {
-              setSpellingDiff(null);
-            }
-            break;
-          }
-        } else {
-          // 4. Conversational equivalence
-          if (checkConversationalEquivalence(userAnswer, target)) {
-            isAnswerCorrect = true;
-            break;
-          }
+        // 3. Conversational equivalence
+        if (checkConversationalEquivalence(userAnswer, target)) {
+          isAnswerCorrect = true;
+          break;
+        }
 
-          // 5. English phrase matching with contraction expansion, synonyms, and article tolerance
-          const userEnglishNorm = normalizeEnglishPhrase(userAnswer);
-          const targetEnglishNorm = normalizeEnglishPhrase(target);
+        // 4. English phrase matching with contraction expansion, synonyms, and article tolerance
+        const userEnglishNorm = normalizeEnglishPhrase(userAnswer);
+        const targetEnglishNorm = normalizeEnglishPhrase(target);
 
-          if (userEnglishNorm === targetEnglishNorm) {
-            isAnswerCorrect = true;
-            break;
-          }
+        if (userEnglishNorm === targetEnglishNorm) {
+          isAnswerCorrect = true;
+          break;
+        }
 
-          // Article tolerance ("where is restroom" === "where is the bathroom")
-          const stripArticles = (s: string) => s.replace(/\b(the|a|an)\b/gi, '').replace(/\s+/g, ' ').trim();
-          if (stripArticles(userEnglishNorm) === stripArticles(targetEnglishNorm)) {
+        // Article tolerance ("where is restroom" === "where is the bathroom")
+        const stripArticles = (s: string) => s.replace(/\b(the|a|an)\b/gi, '').replace(/\s+/g, ' ').trim();
+        if (stripArticles(userEnglishNorm) === stripArticles(targetEnglishNorm)) {
+          isAnswerCorrect = true;
+          break;
+        }
+
+        // Substring inclusion with high length overlap (e.g. formal/informal or phrase inclusion)
+        if (userEnglishNorm.includes(targetEnglishNorm) || targetEnglishNorm.includes(userEnglishNorm)) {
+          const minLen = Math.min(userEnglishNorm.length, targetEnglishNorm.length);
+          const maxLen = Math.max(userEnglishNorm.length, targetEnglishNorm.length);
+          if (minLen / maxLen >= 0.6) {
             isAnswerCorrect = true;
             break;
           }
+        }
 
-          // Substring inclusion with high length overlap (e.g. formal/informal or phrase inclusion)
-          if (userEnglishNorm.includes(targetEnglishNorm) || targetEnglishNorm.includes(userEnglishNorm)) {
-            const minLen = Math.min(userEnglishNorm.length, targetEnglishNorm.length);
-            const maxLen = Math.max(userEnglishNorm.length, targetEnglishNorm.length);
-            if (minLen / maxLen >= 0.6) {
+        // English Levenshtein typo tolerance (only for words of 3+ letters, forgiving 1 typo in 4-8 chars, 2 in longer)
+        if (targetEnglishNorm.length >= 3) {
+          const engMaxErrors = Math.max(0, Math.floor((targetEnglishNorm.length - 1) / 5));
+          if (engMaxErrors > 0) {
+            const engDistance = levenshteinDistance(userEnglishNorm, targetEnglishNorm);
+            if (engDistance <= engMaxErrors) {
               isAnswerCorrect = true;
               break;
             }
           }
-
-          // English Levenshtein typo tolerance (only for words of 3+ letters, forgiving 1 typo in 4-8 chars, 2 in longer)
-          if (targetEnglishNorm.length >= 3) {
-            const engMaxErrors = Math.max(0, Math.floor((targetEnglishNorm.length - 1) / 5));
-            if (engMaxErrors > 0) {
-              const engDistance = levenshteinDistance(userEnglishNorm, targetEnglishNorm);
-              if (engDistance <= engMaxErrors) {
-                isAnswerCorrect = true;
-                break;
-              }
-            }
-          }
         }
       }
-    }
 
     setIsCorrect(isAnswerCorrect);
     setShowNext(true);
@@ -1314,7 +1175,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         {
           prompt: currentQuestion.prompt,
           answer: currentQuestion.answer,
-          userAnswer: processedAnswer,
+          userAnswer: userAnswer,
           category: currentQuestion.type,
           russian: currentQuestion.russian
         }
@@ -1383,120 +1244,13 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    const selectionStart = e.target.selectionStart || 0;
-
-    if (!needsRussianKeyboard) {
-      setUserAnswer(newValue);
-      setLastInput(newValue);
-      return;
-    }
-
-    if (["'", "`", '"'].includes(newValue.charAt(selectionStart - 1))) {
-      const withSpecials = newValue
-        .replace(/'/g, 'ь')
-        .replace(/`/g, 'ь')
-        .replace(/"/g, 'ъ');
-      setUserAnswer(withSpecials);
-      setLastInput(withSpecials);
-      setCursorPosition(selectionStart);
-      return;
-    }
-
     setUserAnswer(newValue);
-
-    const lastCharIndex = selectionStart - 1;
-    if (lastCharIndex >= 1 && lastCharIndex < newValue.length) {
-      const prevChar = newValue.charAt(lastCharIndex - 1);
-      const currChar = newValue.charAt(lastCharIndex);
-
-      if (combinationStarters.includes(prevChar) && 
-          combinationFollowers[prevChar as keyof typeof combinationFollowers]?.includes(currChar)) {
-        const transliteratedValue = transliterate(newValue);
-        setUserAnswer(transliteratedValue);
-        setCursorPosition(selectionStart);
-        setLastInput(newValue);
-        return;
-      }
-    }
-
-    const hasInputType = 'inputType' in e.nativeEvent;
-    const inputType = hasInputType ? (e.nativeEvent as any).inputType : undefined;
-
-    if (newValue.endsWith(' ') || 
-        /[.,!?;:]/.test(newValue.charAt(selectionStart - 1)) ||
-        inputType === 'insertLineBreak' ||
-        newValue.includes('\n')) {
-      const transliteratedValue = transliterate(newValue);
-      setUserAnswer(transliteratedValue);
-      setCursorPosition(selectionStart);
-    } else {
-      setCursorPosition(selectionStart);
-    }
-
     setLastInput(newValue);
   };
 
   const handleCheckAnswer = () => {
-    if (needsRussianKeyboard && userAnswer && !containsCyrillic(userAnswer)) {
-      const transliteratedValue = transliterate(userAnswer);
-      setUserAnswer(transliteratedValue);
-    }
     checkAnswer();
   };
-
-  const handleKeyboardLetterClick = (letter: string) => {
-    if (showNext) return;
-
-    if (letter === 'backspace') {
-      setUserAnswer(prev => prev.slice(0, -1));
-    } else if (letter === 'clear') {
-      setUserAnswer('');
-    } else {
-      const newInput = userAnswer + letter;
-      if (letter === ' ') {
-        const transliteratedValue = transliterate(newInput);
-        setUserAnswer(transliteratedValue);
-      } else {
-        setUserAnswer(newInput);
-      }
-    }
-
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
-  const toggleKeyboard = () => {
-    setShowKeyboard(prev => !prev);
-  };
-
-  const needsRussianKeyboard = false;
-
-  const combinationStarters = ['y', 'Y', 'z', 'Z', 's', 'S', 'c', 'C', 't', 'T', 'k', 'K'];
-  const combinationFollowers = {
-    'y': ['a', 'A', 'u', 'U', 'o', 'O', 'e', 'E'],
-    'Y': ['a', 'A', 'u', 'U', 'o', 'O', 'e', 'E'],
-    'z': ['h', 'H'],
-    'Z': ['h', 'H'],
-    's': ['h', 'H'],
-    'S': ['h', 'H'],
-    'c': ['h', 'H'],
-    'C': ['h', 'H'],
-    't': ['s', 'S'],
-    'T': ['s', 'S'],
-    'k': ['h', 'H'],
-    'K': ['h', 'H']
-  };
-
-  useEffect(() => {
-    if (inputRef.current && needsRussianKeyboard) {
-      requestAnimationFrame(() => {
-        if (inputRef.current) {
-          inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
-        }
-      });
-    }
-  }, [cursorPosition, userAnswer, needsRussianKeyboard]);
 
   // --- RENDER RECAP SCREEN WHEN SESSION IS COMPLETE ---
   if (isSessionComplete) {
@@ -1504,28 +1258,28 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     const masteredCount = masteredWordIds.size;
     const remainingToMaster = Math.max(0, totalCurriculumQuestions - masteredCount);
 
-    let headlineRussian = '';
+    let headlineTitle = '';
     let headlinePronunciation = '';
     let headlineEnglish = '';
     let recapIcon = null;
 
     if (percentage === 100) {
-      headlineRussian = 'Outstanding!';
+      headlineTitle = 'Outstanding!';
       headlinePronunciation = '';
       headlineEnglish = 'Perfect score! You mastered every question in this session.';
       recapIcon = <FaTrophy className="recap-icon gold" />;
     } else if (percentage >= 80) {
-      headlineRussian = 'Great Job!';
+      headlineTitle = 'Great Job!';
       headlinePronunciation = '';
       headlineEnglish = 'Outstanding job! Your English skills are getting stronger.';
       recapIcon = <FaTrophy className="recap-icon silver" />;
     } else if (percentage >= 60) {
-      headlineRussian = 'Well Done!';
+      headlineTitle = 'Well Done!';
       headlinePronunciation = '';
       headlineEnglish = 'Solid progress! A little more practice and you will ace it.';
       recapIcon = <FaStar className="recap-icon bronze" />;
     } else {
-      headlineRussian = 'Keep Practicing!';
+      headlineTitle = 'Keep Practicing!';
       headlinePronunciation = '';
       headlineEnglish = 'Practice makes perfect. Every question brings you closer!';
       recapIcon = <FaGraduationCap className="recap-icon practice" />;
@@ -1539,7 +1293,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           <div className="recap-header">
             <div className="recap-title-row">
               <span className="recap-icon-inline">{recapIcon}</span>
-              <h3 className="recap-russian-title">{headlineRussian}</h3>
+              <h3 className="recap-headline-title recap-russian-title">{headlineTitle}</h3>
             </div>
             <div className="recap-subtitle-row">
               {headlinePronunciation && (
@@ -1760,7 +1514,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         )}
 
         {/* Dedicated Audio Controller for Audio Mode or Spoken English Prompts */}
-        {(currentQuestion.isAudioMode || currentQuestion.audioText || (currentQuestion.russian && !containsCyrillic(currentQuestion.russian))) && (
+        {(currentQuestion.isAudioMode || currentQuestion.audioText || currentQuestion.russian) && (
           <div className={`quiz-audio-controller ${currentQuestion.isAudioMode ? 'hero-audio' : ''}`} role="toolbar" aria-label="Audio controls">
             <button
               type="button"
@@ -1791,92 +1545,11 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             value={userAnswer}
             onChange={handleInputChange} 
             onKeyDown={handleKeyDown}
-            placeholder={needsRussianKeyboard ? "Type in English, press SPACE to convert" : "Your answer here..."}
+            placeholder="Your answer here..."
             disabled={showNext}
             autoFocus
           />
-          {needsRussianKeyboard && !showNext && (
-            <button 
-              className={`keyboard-toggle-button ${showKeyboard ? 'active' : ''}`}
-              onClick={toggleKeyboard}
-              title="Toggle Russian Keyboard"
-            >
-              <FaKeyboard />
-            </button>
-          )}
         </div>
-
-        {needsRussianKeyboard && !showNext && (
-          <div className="cyrillic-helper-panel">
-            {/* Quick-tap special Russian letters strip */}
-            <div className="cyrillic-quick-bar" role="toolbar" aria-label="Special Russian characters">
-              <span className="quick-bar-label">Special keys:</span>
-              <div className="quick-keys-scroll">
-                {CYRILLIC_QUICK_CHARS.map(char => (
-                  <button
-                    key={char}
-                    type="button"
-                    className="quick-char-btn"
-                    onClick={() => handleKeyboardLetterClick(char)}
-                    aria-label={`Insert ${char}`}
-                  >
-                    {char}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Collapsible / Low-profile Phonetic Hint Pill */}
-            <div className="phonetic-guide-wrapper">
-              <button
-                type="button"
-                className="phonetic-guide-toggle-btn"
-                onClick={() => setShowPhoneticGuide(prev => !prev)}
-                aria-expanded={showPhoneticGuide}
-                aria-label="Toggle phonetic typing guide"
-              >
-                <span className="guide-summary-text">
-                  💡 Type English sounds (e.g. <strong>ya</strong> → <strong>я</strong>, <strong>zh</strong> → <strong>ж</strong>)
-                </span>
-                <span className="toggle-chevron">{showPhoneticGuide ? '▲' : '▼'}</span>
-              </button>
-
-              {showPhoneticGuide && (
-                <div className="phonetic-expanded-card" role="region" aria-label="Phonetic typing guide">
-                  <div className="phonetic-rules-grid">
-                    <div><code>ya</code> → <strong>я</strong></div>
-                    <div><code>yu</code> → <strong>ю</strong></div>
-                    <div><code>yo</code> → <strong>ё</strong></div>
-                    <div><code>zh</code> → <strong>ж</strong></div>
-                    <div><code>sh</code> → <strong>ш</strong></div>
-                    <div><code>ch</code> → <strong>ч</strong></div>
-                    <div><code>'</code> or <code>`</code> → <strong>ь</strong></div>
-                    <div><code>"</code> → <strong>ъ</strong></div>
-                  </div>
-                  <small className="phonetic-note">Press SPACE or Enter to auto-convert your English typing!</small>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-
-        {needsRussianKeyboard && showKeyboard && !showNext && (
-          <div className="virtual-keyboard-container">
-            <div className="virtual-keyboard-header">
-              <span>Full Russian Keyboard</span>
-              <button 
-                type="button" 
-                className="close-keyboard-btn" 
-                onClick={toggleKeyboard}
-                aria-label="Close keyboard"
-              >
-                ✕ Close
-              </button>
-            </div>
-            <RussianKeyboard onLetterClick={handleKeyboardLetterClick} />
-          </div>
-        )}
 
         <div className="quiz-buttons">
           {!showNext && (
@@ -1919,20 +1592,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                       </strong>
                     </div>
                   )}
-                  {isCorrect && spellingDiff && spellingDiff.length > 0 && (
-                    <div className="spelling-note">
-                      Correct spelling:{' '}
-                      <span>
-                        {spellingDiff.map((item, idx) => (
-                          item.isDiff ? (
-                            <span key={idx} className="diff-char">{item.char}</span>
-                          ) : (
-                            <React.Fragment key={idx}>{item.char}</React.Fragment>
-                          )
-                        ))}
-                      </span>
-                    </div>
-                  )}
+
                   {isCorrect && isWordJustMastered && (
                     <div className="word-mastered-note">
                       🏆 <strong>Word Mastered (5/5)!</strong> Removed from upcoming questions.

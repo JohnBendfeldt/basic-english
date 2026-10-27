@@ -9,8 +9,8 @@ window.HTMLMediaElement.prototype.play = vi.fn().mockImplementation(() => Promis
 window.HTMLMediaElement.prototype.pause = vi.fn();
 
 const samplePhrases: PhraseItem[] = [
-  { russian: 'Привет', english: 'Hello', pronunciation: 'pree-vyet' },
-  { russian: 'Спасибо', english: 'Thank you', pronunciation: 'spuh-see-buh' },
+  { phrase: 'Good morning', meaning: 'Polite morning greeting', pronunciation: '/ɡʊd ˈmɔːrnɪŋ/' },
+  { phrase: 'Thank you', meaning: 'Expression of gratitude', pronunciation: '/θæŋk juː/' },
 ];
 
 describe('Phrases Component - Intuitive Reveal & Study Mode', () => {
@@ -19,7 +19,7 @@ describe('Phrases Component - Intuitive Reveal & Study Mode', () => {
 
     expect(screen.getByRole('heading', { name: 'Basic Phrases', level: 2 })).toBeInTheDocument();
     expect(
-      screen.getByText(/Tap any card to reveal its translation and pronunciation/i)
+      screen.getByText(/Tap any card to reveal its meaning and pronunciation/i)
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reveal all/i })).toBeInTheDocument();
   });
@@ -31,9 +31,9 @@ describe('Phrases Component - Intuitive Reveal & Study Mode', () => {
     expect(revealButtons).toHaveLength(2);
     expect(revealButtons[0]).toHaveTextContent(/tap to reveal/i);
 
-    // English translation should not be visible initially
-    expect(screen.queryByText('Hello')).not.toBeInTheDocument();
-    expect(screen.queryByText('Thank you')).not.toBeInTheDocument();
+    // Meaning definition should not be visible initially
+    expect(screen.queryByText('Polite morning greeting')).not.toBeInTheDocument();
+    expect(screen.queryByText('Expression of gratitude')).not.toBeInTheDocument();
   });
 
   it('reveals translation and pronunciation when tapping "Tap to reveal", and allows hiding it again', () => {
@@ -42,17 +42,17 @@ describe('Phrases Component - Intuitive Reveal & Study Mode', () => {
     const revealButton = screen.getAllByRole('button', { name: /reveal translation for/i })[0];
     fireEvent.click(revealButton);
 
-    // English translation and pronunciation should now be visible
-    expect(screen.getByText('Hello')).toBeInTheDocument();
+    // Meaning definition and pronunciation should now be visible
+    expect(screen.getByText('Polite morning greeting')).toBeInTheDocument();
     expect(screen.getByText(/Pronunciation:/i)).toBeInTheDocument();
     expect(screen.getByText('Tap to hide')).toBeInTheDocument();
 
     // Tap to hide
-    const hideButton = screen.getByRole('button', { name: /hide translation for Привет/i });
+    const hideButton = screen.getByRole('button', { name: /hide translation for Good morning/i });
     fireEvent.click(hideButton);
 
     // Should return to hidden state
-    expect(screen.queryByText('Hello')).not.toBeInTheDocument();
+    expect(screen.queryByText('Polite morning greeting')).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /reveal translation for/i })[0]).toBeInTheDocument();
   });
 
@@ -63,14 +63,14 @@ describe('Phrases Component - Intuitive Reveal & Study Mode', () => {
     fireEvent.click(toggleAllBtn);
 
     // Both cards should now be revealed
-    expect(screen.getByText('Hello')).toBeInTheDocument();
-    expect(screen.getByText('Thank you')).toBeInTheDocument();
+    expect(screen.getByText('Polite morning greeting')).toBeInTheDocument();
+    expect(screen.getByText('Expression of gratitude')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /hide all/i })).toBeInTheDocument();
 
     // Click Hide All
     fireEvent.click(screen.getByRole('button', { name: /hide all/i }));
-    expect(screen.queryByText('Hello')).not.toBeInTheDocument();
-    expect(screen.queryByText('Thank you')).not.toBeInTheDocument();
+    expect(screen.queryByText('Polite morning greeting')).not.toBeInTheDocument();
+    expect(screen.queryByText('Expression of gratitude')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /reveal all/i })).toBeInTheDocument();
   });
 });

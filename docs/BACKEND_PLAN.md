@@ -1,7 +1,7 @@
 # Full-Stack Architecture Plan: PostgreSQL, OAuth (Google & Entra ID), & API Layer
 
 ## 1. Executive Summary
-This document outlines the architecture for upgrading **Russian Learning App** into a full-stack, enterprise-grade portfolio project.
+This document outlines the architecture for upgrading **Basic English** into a full-stack, enterprise-grade portfolio project.
 
 The goal is to allow users to optionally authenticate using **Google (Gmail)** or **Microsoft Entra ID (Azure AD)** and securely persist their quiz history, accuracy, and spaced-repetition word progress to a **PostgreSQL** database hosted on a serverless provider (e.g. Supabase or Neon), through a **Netlify Functions** API layer.
 

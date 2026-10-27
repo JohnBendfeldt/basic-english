@@ -613,7 +613,8 @@ footer {
   transform: scale(1.12);
 }
 
-.phrase-card .russian {
+.phrase-card .phrase-target,
+.phrase-card .phrase-text {
   font-size: 1.5rem;
   color: var(--primary-dark);
   font-weight: 700;
@@ -1116,6 +1117,7 @@ footer {
   color: var(--primary-color);
 }
 
+.recap-headline-title,
 .recap-russian-title {
   font-size: 1.8rem;
   color: var(--primary-dark);
@@ -1851,140 +1853,6 @@ footer {
   border: 0;
 }
 
-/* Russian Keyboard Styles */
-.russian-keyboard {
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-  background-color: #f0f2f5;
-  border-radius: var(--border-radius);
-  padding: 10px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.keyboard-guide {
-  text-align: center;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: var(--text-muted);
-  padding: 5px;
-  background-color: rgba(74, 90, 244, 0.1);
-  border-radius: 4px;
-}
-
-.keyboard-row {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.keyboard-row:last-child {
-  margin-bottom: 0;
-}
-
-.keyboard-key {
-  min-width: 40px;
-  height: 48px;
-  margin: 3px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: white;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  color: var(--primary-dark);
-  padding: 4px 8px;
-  position: relative;
-}
-
-.key-ru {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--primary-color);
-}
-
-.key-en {
-  font-size: 10px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.keyboard-key:hover {
-  background-color: var(--primary-light);
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-}
-
-.keyboard-key:active {
-  transform: scale(0.95);
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.keyboard-key:active .key-ru,
-.keyboard-key:active .key-en {
-  color: white;
-}
-
-.space-key {
-  min-width: 120px;
-  flex-grow: 1;
-  max-width: 200px;
-  font-size: 14px;
-}
-
-.backspace-key {
-  min-width: 60px;
-  font-size: 20px;
-}
-
-.clear-key {
-  min-width: 60px;
-  background-color: #f8d7da;
-  color: #721c24;
-  border-color: #f5c6cb;
-}
-
-.clear-key:hover {
-  background-color: #f5c6cb;
-  color: #721c24;
-}
-
-/* Special additions for the Russian keyboard special characters row */
-.special-chars-row {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.1);
-}
-
-.special-key {
-  background-color: var(--primary-light);
-}
-
-.vowel-key {
-  background-color: #e8f4ff;
-  font-weight: bold;
-}
-
-.special-key {
-  font-weight: bold;
-  background-color: #e9ecef;
-}
-
-/* Special styling for the soft sign key to make it stand out */
-.soft-sign-key {
-  background-color: #ffefd5;
-  border: 2px solid var(--primary-color);
-}
-
-.soft-sign-key:hover {
-  background-color: #ffe0b2;
-}
 
 .input-container {
   position: relative;
@@ -2601,6 +2469,7 @@ html {
     margin-bottom: 0.85rem;
   }
 
+  .recap-headline-title,
   .recap-russian-title {
     font-size: 1.5rem;
     margin-bottom: 0.15rem;
@@ -2778,6 +2647,7 @@ html {
     font-size: 1.6rem;
   }
 
+  .recap-headline-title,
   .recap-russian-title {
     font-size: 1.35rem;
   }
@@ -3568,7 +3438,8 @@ html {
   flex-direction: column;
 }
 
-.review-word-info .russian-text {
+.review-word-info .phrase-text,
+.review-word-info .target-text {
   font-size: 1.1rem;
   font-weight: 700;
   color: #0f172a;
