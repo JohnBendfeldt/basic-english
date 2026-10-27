@@ -1117,8 +1117,7 @@ footer {
   color: var(--primary-color);
 }
 
-.recap-headline-title,
-.recap-russian-title {
+.recap-headline-title {
   font-size: 1.8rem;
   color: var(--primary-dark);
   margin: 0;
@@ -2469,8 +2468,7 @@ html {
     margin-bottom: 0.85rem;
   }
 
-  .recap-headline-title,
-  .recap-russian-title {
+  .recap-headline-title {
     font-size: 1.5rem;
     margin-bottom: 0.15rem;
   }
@@ -2647,8 +2645,7 @@ html {
     font-size: 1.6rem;
   }
 
-  .recap-headline-title,
-  .recap-russian-title {
+  .recap-headline-title {
     font-size: 1.35rem;
   }
 

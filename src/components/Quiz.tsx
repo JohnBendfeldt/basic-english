@@ -11,16 +11,12 @@ interface AlphabetItem {
   pronunciation: string;
   example?: string;
   word?: string;
-  russianWord?: string;
   meaning?: string;
-  englishWord?: string;
 }
 
 interface PhraseItem {
   phrase?: string;
-  russian?: string;
   meaning?: string;
-  english?: string;
   pronunciation?: string;
 }
 
@@ -46,7 +42,7 @@ interface MissedWord {
   answer: string;
   userAnswer: string;
   category: string;
-  russian?: string;
+  target?: string;
 }
 
 export interface DialogueData {
@@ -539,8 +535,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     categories.forEach(cat => {
       if (data[cat] && Array.isArray(data[cat])) {
         data[cat].forEach((item: PhraseItem) => {
-          const phraseText = item.phrase || item.russian || '';
-          const meaningText = item.meaning || item.english || '';
+          const phraseText = item.phrase || '';
+          const meaningText = item.meaning || '';
           questions.push({
             item,
             isPrimaryDirection: true,
@@ -600,7 +596,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           prompt: 'No questions available',
           answer: '',
           hint: 'Please load some content first',
-          russian: ''
+          target: ''
         });
         return;
       }
@@ -657,7 +653,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: character,
             answer: validAnswers.join(' / '),
             hint: `Phonics sound: ${pronunciation} — Type letter (${character}) or example word (${primaryExample}):`,
-            russian: character,
+            target: character,
             id: selected.id,
             badge: '🔤 Alphabet Phonics',
             audioText: `${character}. as in ${primaryExample}`
@@ -669,7 +665,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: `🎧 Letter Sound: "${character}"`,
             answer: validAnswers.join(' / '),
             hint: `Listen to the phonics sound and type the letter (${character}) or example word (${primaryExample}):`,
-            russian: character,
+            target: character,
             id: selected.id,
             badge: '🎧 Phonics & Sound',
             isAudioMode: true,
@@ -678,8 +674,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         }
       } else if (selected.category === 'numbers') {
         const item = selected.item as PhraseItem;
-        const wordForm = (item.phrase || item.russian || '').toString();
-        const digitRaw = (item.meaning || item.english || '').toString();
+        const wordForm = (item.phrase || '').toString();
+        const digitRaw = (item.meaning || '').toString();
         const digitsOnly = digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw;
 
         // English numbers
@@ -690,7 +686,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: wordForm,
             answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
             hint: `Type this number in digits (e.g. ${digitsOnly}):`,
-            russian: wordForm,
+            target: wordForm,
             id: selected.id,
             badge: '🔢 Digits',
             audioText: wordForm
@@ -702,7 +698,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: digitsOnly,
             answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
             hint: `Spell this number in English words (${wordForm.length} letters):`,
-            russian: wordForm,
+            target: wordForm,
             id: selected.id,
             badge: '🔢 Number Spelling',
             audioText: wordForm
@@ -710,8 +706,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         }
       } else if (selected.category === 'basicPhrases') {
         const item = selected.item as PhraseItem;
-        const phrase = (item.phrase || item.russian || '').toString();
-        const situation = (item.meaning || item.english || '').toString();
+        const phrase = (item.phrase || '').toString();
+        const situation = (item.meaning || '').toString();
 
         if (selected.isPrimaryDirection) {
           // Conversational Dialogue Cloze Completion
@@ -727,7 +723,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               prompt: `A: "${dialogue.speakerA}" | B: "${dialogue.speakerBPrefix} ${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
               answer: `${cleanMissing.toLowerCase()} / ${phrase.toLowerCase()}`,
               hint: `Complete Speaker B's reply (${cleanMissing.length} letters):`,
-              russian: phrase,
+              target: phrase,
               id: selected.id,
               badge: '💬 Complete the Dialogue',
               audioText: phrase,
@@ -764,7 +760,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               prompt: clozePrompt,
               answer: clozeAnswer,
               hint: `Complete the phrase (${situation}${letterNotice}):`,
-              russian: phrase,
+              target: phrase,
               id: selected.id,
               badge: '💬 Complete the Phrase',
               audioText: phrase
@@ -778,7 +774,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: 'Type what you hear',
             answer: phrase.toLowerCase(),
             hint: `Type what you hear (${wordCount} ${wordCount === 1 ? 'word' : 'words'}):`,
-            russian: phrase,
+            target: phrase,
             id: selected.id,
             badge: '🎧 Listen & Type',
             isAudioMode: true,
@@ -788,8 +784,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       } else {
         // commonWords
         const item = selected.item as PhraseItem;
-        const word = (item.phrase || item.russian || '').toString();
-        const definition = (item.meaning || item.english || '').toString();
+        const word = (item.phrase || '').toString();
+        const definition = (item.meaning || '').toString();
 
         const cleanWord = word.trim();
         const validTargets = [cleanWord.toLowerCase()];
@@ -806,7 +802,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: 'Type what you hear',
             answer: targetAnswer,
             hint: `Type what you hear (Starts with "${firstLetter}" • ${cleanWord.length} letters):`,
-            russian: cleanWord,
+            target: cleanWord,
             id: selected.id,
             badge: '🎧 Listen & Type',
             isAudioMode: true,
@@ -820,7 +816,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             prompt: definition,
             answer: targetAnswer,
             hint: `What is the English word? (${firstLetter}${slots} • ${cleanWord.length} letters):`,
-            russian: cleanWord,
+            target: cleanWord,
             id: selected.id,
             badge: '📖 Vocabulary & Spelling',
             audioText: cleanWord
@@ -840,7 +836,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         prompt: 'Hello',
         answer: 'hello',
         hint: 'How do you say this in English?',
-        russian: 'Hello',
+        target: 'Hello',
         id: 'emergency-hello'
       });
     }
@@ -1177,7 +1173,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           answer: currentQuestion.answer,
           userAnswer: userAnswer,
           category: currentQuestion.type,
-          russian: currentQuestion.russian
+          target: currentQuestion.target
         }
       ]);
     }
@@ -1293,7 +1289,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           <div className="recap-header">
             <div className="recap-title-row">
               <span className="recap-icon-inline">{recapIcon}</span>
-              <h3 className="recap-headline-title recap-russian-title">{headlineTitle}</h3>
+              <h3 className="recap-headline-title">{headlineTitle}</h3>
             </div>
             <div className="recap-subtitle-row">
               {headlinePronunciation && (
@@ -1353,7 +1349,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                       </div>
                     </div>
                     <PronunciationButton
-                      text={item.russian || item.prompt}
+                      text={item.target || item.prompt}
                       audioCategory={getAudioCategory(item.category)}
                     />
                   </div>
@@ -1503,9 +1499,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         ) : currentQuestion.isAudioMode ? null : (
           <div className="quiz-prompt">
             <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
-            {currentQuestion.type !== 'alphabet' && currentQuestion.russian && !currentQuestion.isAudioMode && (
+            {currentQuestion.type !== 'alphabet' && currentQuestion.target && !currentQuestion.isAudioMode && (
               <PronunciationButton 
-                text={currentQuestion.russian}
+                text={currentQuestion.target}
                 className="quiz-prompt-audio margin-left"
                 audioCategory={getAudioCategory(currentQuestion.type)}
               />
@@ -1514,12 +1510,12 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         )}
 
         {/* Dedicated Audio Controller for Audio Mode or Spoken English Prompts */}
-        {(currentQuestion.isAudioMode || currentQuestion.audioText || currentQuestion.russian) && (
+        {(currentQuestion.isAudioMode || currentQuestion.audioText || currentQuestion.target) && (
           <div className={`quiz-audio-controller ${currentQuestion.isAudioMode ? 'hero-audio' : ''}`} role="toolbar" aria-label="Audio controls">
             <button
               type="button"
               className={`quiz-audio-btn primary ${isPlayingAudio ? 'playing' : ''}`}
-              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.russian, 0.92)}
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.92)}
               aria-label="Play audio"
             >
               <FaVolumeUp className={isPlayingAudio ? "pulse-animation" : ""} />
@@ -1528,7 +1524,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             <button
               type="button"
               className="quiz-audio-btn slow"
-              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.russian, 0.72)}
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.72)}
               aria-label="Play audio slowly at 0.7x speed"
               title="Listen at slower 0.7x speed"
             >
@@ -1602,10 +1598,10 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               </div>
 
               {/* Audio button in feedback sheet if available */}
-              {currentQuestion.russian && (
+              {currentQuestion.target && (
                 <div className="feedback-audio-action">
                   <PronunciationButton 
-                    text={currentQuestion.russian}
+                    text={currentQuestion.target}
                     className="feedback-pronounce-btn"
                     audioCategory={getAudioCategory(currentQuestion.type)}
                   />
