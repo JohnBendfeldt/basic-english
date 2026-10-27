@@ -5,4 +5,6 @@ http://www.basicenglish.academy/*  https://basicenglish.school/:splat 301!
 https://www.basicenglish.academy/* https://basicenglish.school/:splat 301!
 
 # Redirects are managed in netlify.toml and _redirects
+/.well-known/microsoft-identity-association    /well-known/microsoft-identity-association.json    200!
+/well-known/microsoft-identity-association     /well-known/microsoft-identity-association.json    200!
 /.well-known/*    /well-known/:splat    200!

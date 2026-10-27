@@ -57,6 +57,18 @@
 
 # Route .well-known requests to un-dotted directory (Netlify deploy strips leading dot-directories)
 [[redirects]]
+  from = "/.well-known/microsoft-identity-association"
+  to = "/well-known/microsoft-identity-association.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/well-known/microsoft-identity-association"
+  to = "/well-known/microsoft-identity-association.json"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/.well-known/*"
   to = "/well-known/:splat"
   status = 200
