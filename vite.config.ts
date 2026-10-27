@@ -17,6 +17,13 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [
+          /^\/\.well-known/,
+          /^\/well-known/,
+          /^\/terms/,
+          /^\/privacy/,
+          /^\/sitemap\.xml/,
+        ],
         // Exclude audio index from precache (it's dynamic)
         globIgnores: ['**/audio/index.json'],
         runtimeCaching: [
@@ -24,7 +31,7 @@ export default defineConfig({
             urlPattern: /\.(?:mp3|wav|mp4)$/i,
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'russian-media',
+              cacheName: 'english-media',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
