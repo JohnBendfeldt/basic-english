@@ -121,10 +121,15 @@
     Access-Control-Allow-Origin = "*"
     Cache-Control = "no-cache"
 
-# Service worker and HTML must never be HTTP-cached
-# Otherwise Android Chrome won't detect new deployments
+# Service worker, manifest, and HTML documents must never be HTTP-cached
+# This ensures browsers (Safari, Chrome on iOS/Android, Edge) always fetch new deployments immediately
 [[headers]]
   for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/"
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate"
 
@@ -133,7 +138,17 @@
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate"
 
-# Hashed JS/CSS assets can be cached forever (Vite adds content hashes to filenames)
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate"
+
+# Hashed JS/CSS assets can be cached forever (Vite adds unique content hashes to filenames)
 [[headers]]
   for = "/assets/*"
   [headers.values]

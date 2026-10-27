@@ -16,17 +16,24 @@ export default defineConfig({
       workbox: {
         clientsClaim: true,
         skipWaiting: true,
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [
-          /^\/\.well-known/,
-          /^\/well-known/,
-          /^\/terms/,
-          /^\/privacy/,
-          /^\/sitemap\.xml/,
-        ],
-        // Exclude audio index from precache (it's dynamic)
-        globIgnores: ['**/audio/index.json'],
+        cleanupOutdatedCaches: true,
+        // Exclude index.html and dynamic audio from precache so HTML is never frozen stale
+        globIgnores: ['**/audio/index.json', '**/index.html'],
+        navigateFallback: null,
         runtimeCaching: [
+          {
+            // NetworkFirst for HTML / navigation requests: always check network first, only fallback to cache if offline
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 24 * 60 * 60, // 1 Day
+              },
+            },
+          },
           {
             urlPattern: /\.(?:mp3|wav|mp4)$/i,
             handler: 'StaleWhileRevalidate',

@@ -79,14 +79,6 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
     return true;
   });
 
-  // Check if American English has genuine neural AI voices (e.g. Google US English, Jenny)
-  const hasUSNeural = voices.some(v => v.lang.toLowerCase().replace('_', '-').startsWith('en-us') && isNeuralVoice(v));
-  // If user is viewing American English and only robotic synthesizers (like Samantha) exist,
-  // surface Daniel as a natural, clear alternative
-  const danielAlternative = selectedAccent === 'en-US' && !hasUSNeural
-    ? voices.find(v => v.name.toLowerCase().includes('daniel') && !filteredVoices.some(fv => fv.voiceURI === v.voiceURI))
-    : null;
-
   const handleSelectVoice = (voice: SpeechSynthesisVoice) => {
     setSelectedURI(voice.voiceURI);
     setPreferredVoice(voice.voiceURI);
@@ -121,6 +113,13 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
     }
   };
 
+  const getVoiceDisplayName = (voice: SpeechSynthesisVoice) => {
+    const raw = voice.name;
+    const isEnhanced = raw.toLowerCase().includes('enhanced') || raw.toLowerCase().includes('premium');
+    const clean = raw.replace(/\s*\([^)]*\)/g, '').trim();
+    return isEnhanced ? `${clean} (Enhanced)` : clean;
+  };
+
   const getVoiceBadge = (voice: SpeechSynthesisVoice) => {
     if (isNeuralVoice(voice)) {
       return <span className="voice-badge neural">✨ Studio AI</span>;
@@ -128,7 +127,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
     if (voice.name.toLowerCase().includes('daniel')) {
       return <span className="voice-badge natural">🌟 Clear Accent</span>;
     }
-    return <span className="voice-badge standard">Basic Synth</span>;
+    return <span className="voice-badge standard">Standard</span>;
   };
 
   return (
@@ -228,43 +227,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
 
         {/* Available Voices List */}
         <div className="voice-list-container">
-          <label className="voice-list-label">Available Friendly Voices on Your Device:</label>
-
-          {danielAlternative && (
-            <div className="voice-alternative-banner">
-              <div className="voice-alternative-desc">
-                <strong>Natural Sounding Alternative:</strong> Since only basic offline American synthesizers are installed on your device, Daniel (British English) is recommended for clearer, more natural pronunciation.
-              </div>
-              <div
-                key={danielAlternative.voiceURI}
-                className={`voice-card ${danielAlternative.voiceURI === selectedURI ? 'selected' : ''}`}
-                onClick={() => handleSelectVoice(danielAlternative)}
-              >
-                <div className="voice-card-left">
-                  <div className="voice-radio">
-                    {danielAlternative.voiceURI === selectedURI && <FaCheck />}
-                  </div>
-                  <div className="voice-info">
-                    <div className="voice-name-row">
-                      <span className="voice-name">{danielAlternative.name.replace(/\(.*\)/, '').trim()}</span>
-                      <span className="voice-badge natural">🌟 Clear Accent</span>
-                    </div>
-                    <span className="voice-lang-meta">{danielAlternative.lang} • Recommended Natural Alternative</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className={`voice-preview-btn ${activePreviewURI === danielAlternative.voiceURI ? 'playing' : ''}`}
-                  onClick={(e) => handlePreview(danielAlternative, e)}
-                  title="Listen to sample"
-                  aria-label={`Listen to sample of ${danielAlternative.name}`}
-                >
-                  {activePreviewURI === danielAlternative.voiceURI ? <FaVolumeUp /> : <FaPlay />}
-                  <span>{activePreviewURI === danielAlternative.voiceURI ? 'Playing...' : 'Preview'}</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <label className="voice-list-label">Available Voices on Your Device:</label>
 
           {filteredVoices.length === 0 ? (
             <div className="voice-empty-state">
@@ -287,10 +250,10 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
                       </div>
                       <div className="voice-info">
                         <div className="voice-name-row">
-                          <span className="voice-name">{voice.name.replace(/\(.*\)/, '').trim()}</span>
+                          <span className="voice-name">{getVoiceDisplayName(voice)}</span>
                           {getVoiceBadge(voice)}
                         </div>
-                        <span className="voice-lang-meta">{voice.lang} • {isNeuralVoice(voice) ? 'High-Definition AI Voice' : 'Standard Offline Voice'}</span>
+                        <span className="voice-lang-meta">{voice.lang} • {isNeuralVoice(voice) ? 'High-Definition AI Voice' : 'Standard System Voice'}</span>
                       </div>
                     </div>
                     <button
@@ -311,9 +274,14 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ isOpen, 
         </div>
 
         <div className="voice-modal-footer">
-          <p className="voice-tip">
-            💡 <em>Tip: Google voices (in Chrome) and Jenny / Aria (in Edge) provide the most natural, human-like pronunciation for learning English.</em>
-          </p>
+          <div className="voice-tip-container">
+            <p className="voice-tip">
+              💡 <em>Tip: Google voices (in Chrome) and Jenny / Aria (in Edge) provide the most natural, human-like pronunciation for learning English.</em>
+            </p>
+            <p className="voice-tip ios-tip" style={{ marginTop: '0.4rem', color: '#6366f1', fontSize: '0.85rem' }}>
+              📱 <strong>iPhone / iPad Note:</strong> If clicks animate but you hear no sound, check that the physical Ring/Silent switch on the side of your phone is set to Ring (no orange showing) and volume is turned up.
+            </p>
+          </div>
           <button 
             type="button" 
             className="voice-modal-done-btn"

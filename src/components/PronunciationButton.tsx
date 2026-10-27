@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaVolumeUp } from 'react-icons/fa';
-import { speak, initVoices } from '../utils/speech';
+import { speak, initVoices, unlockIOSAudio } from '../utils/speech';
 
 interface PronunciationButtonProps {
   text: string;
@@ -59,6 +59,8 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
     e.stopPropagation();
     if (isPlaying || !text) return;
     
+    // Synchronously prime and unlock audio inside the user click handler
+    unlockIOSAudio();
     setIsPlaying(true);
     
     speak(
