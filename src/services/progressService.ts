@@ -77,9 +77,10 @@ export class ProgressService {
     wordId: string;
     prompt: string;
     answer: string;
+    target?: string;
     isCorrect: boolean;
   }): Promise<WordProgress> {
-    const { category, wordId, prompt, answer, isCorrect } = params;
+    const { category, wordId, prompt, answer, target, isCorrect } = params;
     const now = new Date().toISOString();
 
     // 1. Try Supabase if authenticated
@@ -109,6 +110,7 @@ export class ProgressService {
               word_id: wordId,
               prompt,
               answer,
+              target: target || existing?.target || prompt,
               times_correct: timesCorrect,
               times_incorrect: timesIncorrect,
               last_tested_at: now,
@@ -125,6 +127,7 @@ export class ProgressService {
               wordId: data.word_id,
               prompt: data.prompt,
               answer: data.answer,
+              target: data.target || target,
               timesCorrect: data.times_correct,
               timesIncorrect: data.times_incorrect,
               lastTestedAt: data.last_tested_at,
@@ -145,6 +148,7 @@ export class ProgressService {
       wordId,
       prompt,
       answer,
+      target: target || prompt,
       timesCorrect: 0,
       timesIncorrect: 0,
       lastTestedAt: now,
@@ -159,6 +163,7 @@ export class ProgressService {
       ...existing,
       prompt,
       answer,
+      target: target || existing.target || prompt,
       timesCorrect,
       timesIncorrect,
       lastTestedAt: now,
