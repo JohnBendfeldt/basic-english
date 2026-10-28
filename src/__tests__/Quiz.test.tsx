@@ -257,4 +257,43 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
 
     expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
   });
+
+  it('does not give away the answer in alphabet hints', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Primary direction
+    render(<Quiz data={{
+      alphabet: [{ letter: 'O', character: 'O', pronunciation: '/oʊ/ & /ɒ/', example: 'open, orange' }]
+    }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('O')).toBeInTheDocument();
+    });
+
+    // Should not contain (O) or (open) in the hint
+    expect(screen.queryByText(/Type letter \(O\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\(open\)/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Type letter or example word/i)).toBeInTheDocument();
+  });
+
+  it('properly formats time questions without leaking the digit answer in prompt instructions', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Primary direction
+    render(<Quiz data={{
+      numbers: [{ phrase: 'Half past two', meaning: '2:30 (30 minutes past 2)', pronunciation: '/hæf pæst tuː/' }]
+    }} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Half past two')).toBeInTheDocument();
+    });
+
+    // Should not leak "e.g. 2:30" or "e.g. 2" in the prompt
+    expect(screen.queryByText(/e\.g\. 2:30/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/e\.g\. 2\b/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Type this time in digital format \(e\.g\. 12:00\):/i)).toBeInTheDocument();
+
+    // Verify 2:30 is accepted
+    const input = screen.getByPlaceholderText(/Your answer here/i);
+    fireEvent.change(input, { target: { value: '2:30' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
+  });
 });

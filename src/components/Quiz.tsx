@@ -652,7 +652,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             type: 'alphabet',
             prompt: character,
             answer: validAnswers.join(' / '),
-            hint: `Phonics sound: ${pronunciation} — Type letter (${character}) or example word (${primaryExample}):`,
+            hint: pronunciation ? `Phonics sound: ${pronunciation} — Type letter or example word:` : 'Type the letter or an example word:',
             target: character,
             id: selected.id,
             badge: '🔤 Alphabet Phonics',
@@ -662,9 +662,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           // Phonics Listen & Type Mode
           setCurrentQuestion({
             type: 'alphabet',
-            prompt: `🎧 Letter Sound: "${character}"`,
+            prompt: 'Letter Sound',
             answer: validAnswers.join(' / '),
-            hint: `Listen to the phonics sound and type the letter (${character}) or example word (${primaryExample}):`,
+            hint: 'Listen to the phonics sound and type the letter or an example word:',
             target: character,
             id: selected.id,
             badge: '🎧 Phonics & Sound',
@@ -676,31 +676,45 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const item = selected.item as PhraseItem;
         const wordForm = (item.phrase || '').toString();
         const digitRaw = (item.meaning || '').toString();
-        const digitsOnly = digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw;
+
+        // Check if item is a time phrase (e.g. "2:30", "2:00", "2:45")
+        const timeMatch = digitRaw.match(/\b\d{1,2}:\d{2}\b/);
+        const isTimeItem = Boolean(timeMatch);
+        const digitsOnly = isTimeItem
+          ? timeMatch![0]
+          : (digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw);
 
         // English numbers
         if (selected.isPrimaryDirection) {
           // Words to Digits
+          const promptInstruction = isTimeItem
+            ? 'Type this time in digital format (e.g. 12:00):'
+            : 'Type this number in digits:';
+
           setCurrentQuestion({
             type: selected.category,
             prompt: wordForm,
             answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
-            hint: `Type this number in digits (e.g. ${digitsOnly}):`,
+            hint: promptInstruction,
             target: wordForm,
             id: selected.id,
-            badge: '🔢 Digits',
+            badge: isTimeItem ? '⏰ Time & Digits' : '🔢 Digits',
             audioText: wordForm
           });
         } else {
           // Digits to English Words
+          const promptInstruction = isTimeItem
+            ? `Spell this time in English words (${wordForm.length} letters):`
+            : `Spell this number in English words (${wordForm.length} letters):`;
+
           setCurrentQuestion({
             type: selected.category,
             prompt: digitsOnly,
             answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
-            hint: `Spell this number in English words (${wordForm.length} letters):`,
+            hint: promptInstruction,
             target: wordForm,
             id: selected.id,
-            badge: '🔢 Number Spelling',
+            badge: isTimeItem ? '⏰ Time Telling' : '🔢 Number Spelling',
             audioText: wordForm
           });
         }
