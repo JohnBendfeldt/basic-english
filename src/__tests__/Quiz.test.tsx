@@ -63,13 +63,16 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
   });
 
   it('excludes mastered words (masteryLevel >= 5) from active questions', async () => {
-    // Mock getMasteredWordIds to return 'alphabet-A' as already mastered
-    vi.spyOn(ProgressService, 'getMasteredWordIds').mockResolvedValue(new Set(['alphabet-A']));
+    // Mock getMasteredWordIds to return 'numbers-One-to-meaning' as already mastered
+    vi.spyOn(ProgressService, 'getMasteredWordIds').mockResolvedValue(new Set([
+      'numbers-One-to-meaning',
+      'numbers-1-to-phrase'
+    ]));
 
     render(<Quiz data={{
-      alphabet: [
-        { letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple' },
-        { letter: 'B', character: 'B', pronunciation: '/biː/', example: 'as in Book' }
+      numbers: [
+        { phrase: 'One', meaning: '1', pronunciation: '/wʌn/' },
+        { phrase: 'Two', meaning: '2', pronunciation: '/tuː/' }
       ]
     }} />);
 
@@ -78,10 +81,9 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
       expect(screen.getByText(/Mastered:/i)).toBeInTheDocument();
     });
 
-    // The prompt should be B, NOT the mastered A
+    // The question should be for 'Two', not 'One'
     const prompt = document.querySelector('.quiz-prompt');
-    expect(prompt?.textContent).toContain('B');
-    expect(prompt?.textContent).not.toContain('A');
+    expect(prompt?.textContent).not.toContain('One');
   });
 
   it('finishes session and shows Done recap card when goal questions answered', async () => {
@@ -258,20 +260,27 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
   });
 
-  it('does not give away the answer in alphabet hints', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Primary direction
+  it('tests letter recognition without giving away the letter in the prompt or hint', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01); // Primary direction: listening mode
     render(<Quiz data={{
       alphabet: [{ letter: 'O', character: 'O', pronunciation: '/oʊ/ & /ɒ/', example: 'open, orange' }]
     }} />);
 
     await waitFor(() => {
-      expect(screen.getByText('O')).toBeInTheDocument();
+      expect(screen.getByText(/Letter Listening/i)).toBeInTheDocument();
     });
 
-    // Should not contain (O) or (open) in the hint
+    // Should not contain (O) or (open) in the prompt or hint
     expect(screen.queryByText(/Type letter \(O\)/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\(open\)/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Type letter or example word/i)).toBeInTheDocument();
+    expect(screen.getByText(/Listen carefully and type the English letter you hear/i)).toBeInTheDocument();
+
+    // Verify typing 'o' works
+    const input = screen.getByPlaceholderText(/Your answer here/i);
+    fireEvent.change(input, { target: { value: 'o' } });
+    fireEvent.click(screen.getByRole('button', { name: /Check Answer/i }));
+
+    expect(screen.getByText(/Correct!/i)).toBeInTheDocument();
   });
 
   it('properly formats time questions without leaking the digit answer in prompt instructions', async () => {

@@ -525,7 +525,13 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         questions.push({
           item,
           isPrimaryDirection: true,
-          id: `alphabet-${char}`,
+          id: `alphabet-${char}-listening`,
+          category: 'alphabet'
+        });
+        questions.push({
+          item,
+          isPrimaryDirection: false,
+          id: `alphabet-${char}-example`,
           category: 'alphabet'
         });
       });
@@ -556,14 +562,14 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     return questions;
   }, [data]);
 
-  const totalCurriculumQuestions = (data?.alphabet?.length || 0) +
+  const totalCurriculumQuestions = ((data?.alphabet?.length || 0) * 2) +
     ((data?.basicPhrases?.length || 0) * 2) +
     ((data?.numbers?.length || 0) * 2) +
     ((data?.commonWords?.length || 0) * 2);
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-  const playAudio = useCallback((textToSpeak: string, rate: number = 0.92) => {
+  const playAudio = useCallback((textToSpeak: string, rate: number = 0.92, category?: 'alphabet' | 'phrases' | 'numbers' | 'words' | 'examples') => {
     if (!textToSpeak) return;
     setIsPlayingAudio(true);
     try {
@@ -573,7 +579,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         'quiz-audio-controller',
         () => setIsPlayingAudio(false),
         () => setIsPlayingAudio(false),
-        { rate }
+        { rate, category }
       );
     } catch (err) {
       setIsPlayingAudio(false);
@@ -645,31 +651,34 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         }
 
         const primaryExample = exampleWords[0] || 'apple';
+        const maskedExample = primaryExample.length > 1
+          ? `_${primaryExample.slice(1)}`
+          : primaryExample;
 
         if (selected.isPrimaryDirection) {
-          // Visual Letter Phonics
+          // Phonics Listen & Identify Letter Mode (Pure audio test without revealing letter)
           setCurrentQuestion({
             type: 'alphabet',
-            prompt: character,
+            prompt: 'Listen to the letter',
             answer: validAnswers.join(' / '),
-            hint: pronunciation ? `Phonics sound: ${pronunciation} — Type letter or example word:` : 'Type the letter or an example word:',
+            hint: 'Listen carefully and type the English letter you hear:',
             target: character,
             id: selected.id,
-            badge: '🔤 Alphabet Phonics',
-            audioText: `${character}. as in ${primaryExample}`
+            badge: '🎧 Letter Listening',
+            isAudioMode: true,
+            audioText: character
           });
         } else {
-          // Phonics Listen & Type Mode
+          // Phonics Clue & Example Association Mode
           setCurrentQuestion({
             type: 'alphabet',
-            prompt: 'Letter Sound',
+            prompt: pronunciation ? `Sound: ${pronunciation}` : `Word clue: ${maskedExample}`,
             answer: validAnswers.join(' / '),
-            hint: 'Listen to the phonics sound and type the letter or an example word:',
+            hint: `Which letter makes this sound or starts the word "${maskedExample}"?`,
             target: character,
             id: selected.id,
-            badge: '🎧 Phonics & Sound',
-            isAudioMode: true,
-            audioText: `${primaryExample}. Letter ${character}.`
+            badge: '🔤 Phonics & Letter',
+            audioText: character
           });
         }
       } else if (selected.category === 'numbers') {
@@ -815,7 +824,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             type: selected.category,
             prompt: 'Type what you hear',
             answer: targetAnswer,
-            hint: `Type what you hear (Starts with "${firstLetter}" • ${cleanWord.length} letters):`,
+            hint: `Type what you hear (${cleanWord.length} letters):`,
             target: cleanWord,
             id: selected.id,
             badge: '🎧 Listen & Type',
@@ -1206,6 +1215,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         wordId: currentQuestion.id || `${currentQuestion.type}-${currentQuestion.prompt}`,
         prompt: currentQuestion.prompt || '',
         answer: currentQuestion.answer || '',
+        target: currentQuestion.target || '',
         isCorrect: isAnswerCorrect,
       }).then(updatedWord => {
         if (updatedWord && updatedWord.masteryLevel >= 5) {
@@ -1529,7 +1539,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             <button
               type="button"
               className={`quiz-audio-btn primary ${isPlayingAudio ? 'playing' : ''}`}
-              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.92)}
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.92, getAudioCategory(currentQuestion.type))}
               aria-label="Play audio"
             >
               <FaVolumeUp className={isPlayingAudio ? "pulse-animation" : ""} />
@@ -1538,7 +1548,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             <button
               type="button"
               className="quiz-audio-btn slow"
-              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.72)}
+              onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.72, getAudioCategory(currentQuestion.type))}
               aria-label="Play audio slowly at 0.7x speed"
               title="Listen at slower 0.7x speed"
             >

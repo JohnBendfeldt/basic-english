@@ -125,7 +125,7 @@ export const ProgressModal: React.FC<ProgressModalProps> = ({ isOpen, onClose, u
                           {item.timesCorrect}✓ / {item.timesIncorrect}✗
                         </span>
                         <PronunciationButton
-                          text={item.prompt}
+                          text={item.target || item.prompt}
                           audioCategory={item.category as any}
                         />
                       </div>

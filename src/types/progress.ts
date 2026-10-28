@@ -30,6 +30,7 @@ export interface WordProgress {
   wordId: string; // unique identifier e.g. "alphabet-А" or "phrases-Привет"
   prompt: string;
   answer: string;
+  target?: string;
   timesCorrect: number;
   timesIncorrect: number;
   lastTestedAt: string;
