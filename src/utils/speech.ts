@@ -37,8 +37,15 @@ const speechQueues = new Map<string, Array<{
   onError?: (err: unknown) => void;
 }>>();
 
-// Active HTML5 Audio element instance
-let currentAudioElement: HTMLAudioElement | null = null;
+interface ActivePlayback {
+  audio: HTMLAudioElement;
+  buttonId: string;
+  onEnd?: () => void;
+  timerId?: ReturnType<typeof setTimeout> | null;
+}
+
+// Active playback tracker
+let currentActivePlayback: ActivePlayback | null = null;
 let isInitialized = false;
 
 // Check if speech or audio is supported
@@ -94,7 +101,7 @@ const fallbackToSpeechSynthesis = (
 };
 
 /**
- * Play a pre-rendered static MP3 audio file
+ * Play a pre-rendered static MP3 audio file with robust lifecycle and callback guarantees
  */
 const playPreRenderedAudio = (
   audioUrl: string,
@@ -106,47 +113,109 @@ const playPreRenderedAudio = (
   onError?: (err: unknown) => void
 ): void => {
   try {
-    // Stop any existing audio
-    if (currentAudioElement) {
-      currentAudioElement.pause();
-      currentAudioElement.currentTime = 0;
-      currentAudioElement.onended = null;
-      currentAudioElement.onerror = null;
-      currentAudioElement = null;
+    // 1. If another button was previously playing, notify it immediately so its UI resets!
+    if (currentActivePlayback) {
+      const prev = currentActivePlayback;
+      currentActivePlayback = null;
+      if (prev.timerId) clearTimeout(prev.timerId);
+      try {
+        prev.audio.pause();
+        prev.audio.currentTime = 0;
+      } catch (e) {
+        // Ignore pause errors
+      }
+      speakingButtons.set(prev.buttonId, false);
+      if (prev.onEnd) {
+        try { prev.onEnd(); } catch (e) { /* Ignore callback errors */ }
+      }
     }
 
     const audio = new Audio(audioUrl);
-    currentAudioElement = audio;
+    let isCleanedUp = false;
 
-    // Apply playback speed if custom rate was specified
-    if (options?.rate && options.rate > 0 && options.rate !== 1.0) {
-      audio.playbackRate = options.rate;
-    }
+    const activePlayback: ActivePlayback = {
+      audio,
+      buttonId,
+      onEnd,
+      timerId: null
+    };
+    currentActivePlayback = activePlayback;
 
-    audio.onended = () => {
-      if (currentAudioElement === audio) {
-        currentAudioElement = null;
+    // Complete playback and cleanly release the button state
+    const completePlayback = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+
+      if (activePlayback.timerId) {
+        clearTimeout(activePlayback.timerId);
+        activePlayback.timerId = null;
       }
+
+      if (currentActivePlayback === activePlayback) {
+        currentActivePlayback = null;
+      }
+
       speakingButtons.set(buttonId, false);
-      if (onEnd) onEnd();
+      if (onEnd) {
+        try { onEnd(); } catch (e) { /* Ignore callback errors */ }
+      }
       processSpeechQueue(buttonId);
     };
 
-    audio.onerror = (e) => {
-      console.warn(`Local audio error for "${text}" (${audioUrl}), falling back to speech synthesis:`, e);
-      if (currentAudioElement === audio) {
-        currentAudioElement = null;
+    // Apply playback speed safely once metadata is loaded (prevents browser stall on short audio)
+    if (options?.rate && options.rate > 0 && options.rate !== 1.0) {
+      const targetRate = options.rate;
+      audio.addEventListener('loadedmetadata', () => {
+        try { audio.playbackRate = targetRate; } catch (e) { /* Ignore rate error */ }
+      }, { once: true });
+    }
+
+    // Normal audio ended listener
+    audio.addEventListener('ended', completePlayback, { once: true });
+
+    // Handle audio loading or playback error by falling back to browser speech synthesis
+    audio.addEventListener('error', (e) => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      if (activePlayback.timerId) clearTimeout(activePlayback.timerId);
+      if (currentActivePlayback === activePlayback) {
+        currentActivePlayback = null;
       }
+      console.warn(`Local audio error for "${text}" (${audioUrl}), falling back to speech synthesis:`, e);
       fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
+    }, { once: true });
+
+    // Safety timeout: ensure the button NEVER gets stuck green even if the browser drops the ended event
+    const startSafetyTimer = () => {
+      const durationSec = isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 3.0;
+      const timeoutMs = Math.max(2000, Math.round(durationSec * 1000) + 500);
+      if (!activePlayback.timerId && !isCleanedUp) {
+        activePlayback.timerId = setTimeout(() => {
+          if (!isCleanedUp && currentActivePlayback === activePlayback) {
+            completePlayback();
+          }
+        }, timeoutMs);
+      }
     };
+
+    audio.addEventListener('loadedmetadata', startSafetyTimer, { once: true });
+    // Backup timer starter in case loadedmetadata doesn't fire
+    setTimeout(() => {
+      if (!activePlayback.timerId && !isCleanedUp) {
+        startSafetyTimer();
+      }
+    }, 600);
 
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch((err) => {
-        console.warn(`Audio play() promise rejected for "${text}" (${audioUrl}), falling back:`, err);
-        if (currentAudioElement === audio) {
-          currentAudioElement = null;
+        if (isCleanedUp) return;
+        isCleanedUp = true;
+        if (activePlayback.timerId) clearTimeout(activePlayback.timerId);
+        if (currentActivePlayback === activePlayback) {
+          currentActivePlayback = null;
         }
+        console.warn(`Audio play() promise rejected for "${text}" (${audioUrl}), falling back:`, err);
         fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
       });
     }
@@ -217,12 +286,20 @@ export const speak = (
 
 // Cancel all speech and audio playback for cleanup
 export const cancelAllSpeech = (): void => {
-  if (currentAudioElement) {
-    currentAudioElement.pause();
-    currentAudioElement.currentTime = 0;
-    currentAudioElement.onended = null;
-    currentAudioElement.onerror = null;
-    currentAudioElement = null;
+  if (currentActivePlayback) {
+    const prev = currentActivePlayback;
+    currentActivePlayback = null;
+    if (prev.timerId) clearTimeout(prev.timerId);
+    try {
+      prev.audio.pause();
+      prev.audio.currentTime = 0;
+    } catch (e) {
+      // Ignore pause errors
+    }
+    speakingButtons.set(prev.buttonId, false);
+    if (prev.onEnd) {
+      try { prev.onEnd(); } catch (e) { /* Ignore callback errors */ }
+    }
   }
 
   speechQueues.clear();

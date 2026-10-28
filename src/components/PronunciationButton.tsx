@@ -20,7 +20,7 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
   className,
   audioCategory,
   useLocalAudio = true,
-  rate = 0.95
+  rate = 1.0
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -56,6 +56,21 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
   useEffect(() => {
     setIsPlaying(false);
   }, [text]);
+
+  // Safety fallback: ensure isPlaying always resets even if audio events are dropped
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (isPlaying) {
+      timer = setTimeout(() => {
+        if (isMounted.current) {
+          setIsPlaying(false);
+        }
+      }, 4000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isPlaying]);
 
   const handleSpeak = (e: React.MouseEvent) => {
     e.stopPropagation();
