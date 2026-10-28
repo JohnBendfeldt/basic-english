@@ -18,7 +18,7 @@ interface AlphabetProps {
 const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
   const handleBadgeSpeak = (word?: string) => {
     if (word) {
-      speak(word, 'en-US', `badge-${word}`);
+      speak(word, 'en-US', `badge-${word}`, undefined, undefined, { category: 'examples' });
     }
   };
 

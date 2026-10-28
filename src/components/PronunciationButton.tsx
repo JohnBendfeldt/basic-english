@@ -18,7 +18,9 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
   lang = 'en-US',
   label,
   className,
-  rate = 0.9
+  audioCategory,
+  useLocalAudio = true,
+  rate = 0.95
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -79,7 +81,7 @@ const PronunciationButton: React.FC<PronunciationButtonProps> = ({
           setIsPlaying(false);
         }
       },
-      { rate }
+      { rate, category: audioCategory, useLocalAudio }
     );
   };
 
