@@ -12,6 +12,8 @@ export interface SpeechOptions {
   rate?: number; // 0.75 = slow (beginner), 0.95 = natural measured (default), 1.1 = brisk
   pitch?: number;
   voiceURI?: string;
+  category?: string;
+  useLocalAudio?: boolean;
 }
 
 // Active speech settings

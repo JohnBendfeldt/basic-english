@@ -1,5 +1,7 @@
 /**
- * Utility functions for text-to-speech using browser speech synthesis for Basic English
+ * Utility functions for audio playback and speech synthesis for Basic English
+ * Prioritizes crystal-clear pre-rendered Microsoft Neural TTS (en-US-JennyNeural)
+ * audio files, with seamless fallback to browser speech synthesis.
  */
 import { 
   unlockIOSAudio,
@@ -21,6 +23,7 @@ import {
   getBrowserVoiceQualityInfo,
   isNeuralVoice
 } from './browserSpeech';
+import { getLocalAudioUrl } from '../data/audioManifest';
 
 // Track currently speaking items by button ID
 const speakingButtons = new Map<string, boolean>();
@@ -34,11 +37,13 @@ const speechQueues = new Map<string, Array<{
   onError?: (err: unknown) => void;
 }>>();
 
+// Active HTML5 Audio element instance
+let currentAudioElement: HTMLAudioElement | null = null;
 let isInitialized = false;
 
-// Check if speech is supported
+// Check if speech or audio is supported
 export const isSpeechSupported = (): boolean => {
-  return isInitialized || isBrowserSpeechSupported();
+  return true; // Local pre-rendered audio is always supported in any browser
 };
 
 // Initialize speech system
@@ -51,6 +56,104 @@ export const initVoices = async (): Promise<void> => {
   isInitialized = true;
   
   return Promise.resolve();
+};
+
+/**
+ * Fallback to browser SpeechSynthesis if local audio file fails or is missing
+ */
+const fallbackToSpeechSynthesis = (
+  text: string,
+  lang: string | undefined,
+  options: SpeechOptions | undefined,
+  buttonId: string,
+  onEnd?: () => void,
+  onError?: (err: unknown) => void
+): void => {
+  const speechOptions: SpeechOptions = {
+    accent: (lang as EnglishAccent) || options?.accent || getPreferredAccent(),
+    rate: options?.rate ?? getPreferredRate(),
+    pitch: options?.pitch ?? getPreferredPitch(),
+    voiceURI: options?.voiceURI || getPreferredVoiceURI() || undefined,
+  };
+
+  speakEnglishText(
+    text,
+    speechOptions,
+    () => {
+      speakingButtons.set(buttonId, false);
+      if (onEnd) onEnd();
+      processSpeechQueue(buttonId);
+    },
+    (error: Error) => {
+      console.error('Speech synthesis fallback error:', error);
+      speakingButtons.set(buttonId, false);
+      if (onError) onError(error);
+      processSpeechQueue(buttonId);
+    }
+  );
+};
+
+/**
+ * Play a pre-rendered static MP3 audio file
+ */
+const playPreRenderedAudio = (
+  audioUrl: string,
+  text: string,
+  lang: string | undefined,
+  options: SpeechOptions | undefined,
+  buttonId: string,
+  onEnd?: () => void,
+  onError?: (err: unknown) => void
+): void => {
+  try {
+    // Stop any existing audio
+    if (currentAudioElement) {
+      currentAudioElement.pause();
+      currentAudioElement.currentTime = 0;
+      currentAudioElement.onended = null;
+      currentAudioElement.onerror = null;
+      currentAudioElement = null;
+    }
+
+    const audio = new Audio(audioUrl);
+    currentAudioElement = audio;
+
+    // Apply playback speed if custom rate was specified
+    if (options?.rate && options.rate > 0 && options.rate !== 1.0) {
+      audio.playbackRate = options.rate;
+    }
+
+    audio.onended = () => {
+      if (currentAudioElement === audio) {
+        currentAudioElement = null;
+      }
+      speakingButtons.set(buttonId, false);
+      if (onEnd) onEnd();
+      processSpeechQueue(buttonId);
+    };
+
+    audio.onerror = (e) => {
+      console.warn(`Local audio error for "${text}" (${audioUrl}), falling back to speech synthesis:`, e);
+      if (currentAudioElement === audio) {
+        currentAudioElement = null;
+      }
+      fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
+    };
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn(`Audio play() promise rejected for "${text}" (${audioUrl}), falling back:`, err);
+        if (currentAudioElement === audio) {
+          currentAudioElement = null;
+        }
+        fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
+      });
+    }
+  } catch (err) {
+    console.error('Exception starting local audio, falling back:', err);
+    fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
+  }
 };
 
 // Process the queue for a specific button
@@ -74,37 +177,25 @@ const processSpeechQueue = async (buttonId: string): Promise<void> => {
   const { text, lang, options, onEnd, onError } = queueItem;
   
   try {
-    const speechOptions: SpeechOptions = {
-      accent: (lang as EnglishAccent) || options?.accent || getPreferredAccent(),
-      rate: options?.rate ?? getPreferredRate(),
-      pitch: options?.pitch ?? getPreferredPitch(),
-      voiceURI: options?.voiceURI || getPreferredVoiceURI() || undefined,
-    };
+    // 1. Check if local pre-rendered audio is available
+    const useLocal = options?.useLocalAudio !== false;
+    const localAudioUrl = useLocal ? getLocalAudioUrl(text, options?.category) : null;
 
-    speakEnglishText(
-      text,
-      speechOptions,
-      () => {
-        speakingButtons.set(buttonId, false);
-        if (onEnd) onEnd();
-        processSpeechQueue(buttonId);
-      },
-      (error: Error) => {
-        console.error('Speech synthesis error:', error);
-        speakingButtons.set(buttonId, false);
-        if (onError) onError(error);
-        processSpeechQueue(buttonId);
-      }
-    );
+    if (localAudioUrl) {
+      playPreRenderedAudio(localAudioUrl, text, lang, options, buttonId, onEnd, onError);
+    } else {
+      // 2. Fall back to browser speech synthesis
+      fallbackToSpeechSynthesis(text, lang, options, buttonId, onEnd, onError);
+    }
   } catch (error) {
-    console.error('Error during speech:', error);
+    console.error('Error during speech queue processing:', error);
     speakingButtons.set(buttonId, false);
     if (onError) onError(error);
     processSpeechQueue(buttonId);
   }
 };
 
-// Speak text using browser speech synthesis
+// Speak text using pre-rendered audio or browser speech synthesis
 export const speak = (
   text: string, 
   lang = 'en-US',
@@ -124,8 +215,16 @@ export const speak = (
   processSpeechQueue(buttonId);
 };
 
-// Cancel all speech for cleanup
+// Cancel all speech and audio playback for cleanup
 export const cancelAllSpeech = (): void => {
+  if (currentAudioElement) {
+    currentAudioElement.pause();
+    currentAudioElement.currentTime = 0;
+    currentAudioElement.onended = null;
+    currentAudioElement.onerror = null;
+    currentAudioElement = null;
+  }
+
   speechQueues.clear();
   speakingButtons.clear();
   
@@ -136,6 +235,7 @@ export const cancelAllSpeech = (): void => {
 
 export {
   unlockIOSAudio,
+  getLocalAudioUrl,
   getFriendlyEnglishVoices,
   setPreferredVoice,
   setPreferredAccent,
@@ -155,6 +255,7 @@ const speechUtils = {
   speak,
   initVoices,
   cancelAllSpeech,
+  getLocalAudioUrl,
   getFriendlyEnglishVoices,
   setPreferredVoice,
   getPreferredVoiceURI,
