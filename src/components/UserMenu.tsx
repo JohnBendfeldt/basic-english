@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaUser, FaSignOutAlt, FaChartLine, FaSignInAlt, FaGoogle, FaMicrosoft, FaGithub, FaShieldAlt, FaFileContract, FaMicrophone } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaChartLine, FaSignInAlt, FaGoogle, FaMicrosoft, FaGithub, FaShieldAlt, FaFileContract } from 'react-icons/fa';
 import { supabase, signOutUser } from '../services/supabaseClient';
 import { ProgressService } from '../services/progressService';
 import AuthModal from './AuthModal';
@@ -7,11 +7,10 @@ import ProgressModal from './ProgressModal';
 
 interface UserMenuProps {
   onNavigate?: (section: string) => void;
-  onOpenVoiceModal?: () => void;
   initialUser?: any;
 }
 
-export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, onOpenVoiceModal, initialUser = null }) => {
+export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = null }) => {
   const [currentUser, setCurrentUser] = useState<any>(initialUser);
   const [menuOpen, setMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -132,20 +131,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, onOpenVoiceModal
                 <span>My Progress & Stats</span>
               </button>
 
-              {onOpenVoiceModal && (
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuOpen(false);
-                    onOpenVoiceModal();
-                  }}
-                >
-                  <FaMicrophone />
-                  <span>Voice & Pronunciation</span>
-                </button>
-              )}
+
 
               {onNavigate && (
                 <>
