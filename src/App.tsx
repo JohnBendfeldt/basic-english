@@ -239,11 +239,60 @@ const App: React.FC = () => {
       <header>
         <div className="header-content">
           <h1 onClick={() => handleSectionChange('alphabet')} style={{ cursor: 'pointer' }} title="Return to alphabet lessons">
-            <svg className="english-emblem" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Basic English logo" role="img" style={{ width: '28px', height: '28px', marginRight: '8px', verticalAlign: 'middle' }}>
-              <circle cx="18" cy="18" r="17" fill="#4F46E5" stroke="#FFFFFF" strokeWidth="2"/>
-              <path d="M18 9L8 14L18 19L28 14L18 9Z" fill="#FBBF24"/>
-              <path d="M12 16.5V23C12 25 14.5 27 18 27C21.5 27 24 25 24 23V16.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M28 14.5V21" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              className="app-emblem english-emblem english-flag"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Basic English logo"
+              role="img"
+            >
+              <defs>
+                <linearGradient id="enEmblemBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#1e3a8a" />
+                  <stop offset="50%" stopColor="#0f172a" />
+                  <stop offset="100%" stopColor="#312e81" />
+                </linearGradient>
+                <linearGradient id="enGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#fef08a" />
+                  <stop offset="60%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#b45309" />
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#enEmblemBg)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+              <g transform="translate(5, 5)">
+                <defs>
+                  <clipPath id="enFlagClip">
+                    <rect x="0" y="0" width="13" height="9" rx="2" />
+                  </clipPath>
+                </defs>
+                <rect x="-0.5" y="-0.5" width="14" height="10" rx="2.5" fill="rgba(0, 0, 0, 0.45)" />
+                <rect x="0" y="0" width="13" height="9" rx="2" fill="#ffffff" />
+                <g clipPath="url(#enFlagClip)">
+                  <rect x="0" y="0" width="13" height="9" fill="#012169" />
+                  <line x1="0" y1="0" x2="13" y2="9" stroke="#ffffff" strokeWidth="2.2" />
+                  <line x1="13" y1="0" x2="0" y2="9" stroke="#ffffff" strokeWidth="2.2" />
+                  <line x1="0" y1="0" x2="13" y2="9" stroke="#c8102e" strokeWidth="1.1" />
+                  <line x1="13" y1="0" x2="0" y2="9" stroke="#c8102e" strokeWidth="1.1" />
+                  <rect x="4.8" y="0" width="3.4" height="9" fill="#ffffff" />
+                  <rect x="0" y="2.8" width="13" height="3.4" fill="#ffffff" />
+                  <rect x="5.5" y="0" width="2" height="9" fill="#c8102e" />
+                  <rect x="0" y="3.5" width="13" height="2" fill="#c8102e" />
+                </g>
+                <rect x="0" y="0" width="13" height="9" rx="2" fill="none" stroke="#ffffff" strokeWidth="0.8" />
+              </g>
+              <g transform="translate(0, 3)">
+                <path d="M24 13L8 20.5L24 28L40 20.5L24 13Z" fill="url(#enGoldGrad)" />
+                <path
+                  d="M14 24.5V32C14 35.5 18 38 24 38C30 38 34 35.5 34 32V24.5"
+                  stroke="#ffffff"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path d="M40 21V30.5" stroke="url(#enGoldGrad)" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="40" cy="31.5" r="1.5" fill="url(#enGoldGrad)" />
+              </g>
             </svg>
             Basic English
           </h1>
