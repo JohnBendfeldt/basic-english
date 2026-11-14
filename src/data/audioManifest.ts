@@ -521,31 +521,68 @@ export const AUDIO_CATEGORY_MAP: Record<string, Record<string, string>> = {
 /**
  * Find pre-rendered audio file for given text and optional category
  */
+export function normalizeAudioKey(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\.\.\./g, '')
+    .replace(/[.,!?;:()'"]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function slugifyAudioKey(text: string): string {
+  return normalizeAudioKey(text).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
 export function getLocalAudioUrl(text: string, category?: string): string | null {
   if (!text) return null;
 
-  const normalized = text
-    .toLowerCase()
-    .replace(/\.\.\./g, '')
-    .replace(/[.,!?;:()\'"]+/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const normalized = normalizeAudioKey(text);
+  if (!normalized) return null;
 
-  // 1. Direct normalized text map lookup
-  if (AUDIO_TEXT_MAP[normalized]) {
-    return AUDIO_TEXT_MAP[normalized];
-  }
+  const catAlias =
+    category === 'basicPhrases' ? 'phrases' :
+    category === 'commonWords' ? 'words' :
+    category;
 
-  // 2. Category-specific lookup
-  if (category && AUDIO_CATEGORY_MAP[category]) {
-    const catMap = AUDIO_CATEGORY_MAP[category];
-    const slug = normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const slug = slugifyAudioKey(text);
+
+  // 1. Category-specific lookup
+  if (catAlias && AUDIO_CATEGORY_MAP[catAlias]) {
+    const catMap = AUDIO_CATEGORY_MAP[catAlias];
     if (catMap[slug]) return catMap[slug];
     if (catMap[normalized]) return catMap[normalized];
   }
 
-  // 3. Fallback search across all categories by slug
-  const slug = normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  // 2. Direct normalized text map lookup
+  if (AUDIO_TEXT_MAP[normalized]) {
+    return AUDIO_TEXT_MAP[normalized];
+  }
+
+  // 3. Primary slash-variant lookup (e.g., "Hello / Hi")
+  if (text.includes('/')) {
+    const primary = text.split('/')[0];
+    const primaryNorm = normalizeAudioKey(primary);
+    const primarySlug = slugifyAudioKey(primary);
+    if (catAlias && AUDIO_CATEGORY_MAP[catAlias]) {
+      const catMap = AUDIO_CATEGORY_MAP[catAlias];
+      if (catMap[primarySlug]) return catMap[primarySlug];
+      if (catMap[primaryNorm]) return catMap[primaryNorm];
+    }
+    if (AUDIO_TEXT_MAP[primaryNorm]) {
+      return AUDIO_TEXT_MAP[primaryNorm];
+    }
+    for (const cat of Object.keys(AUDIO_CATEGORY_MAP)) {
+      if (AUDIO_CATEGORY_MAP[cat][primarySlug]) {
+        return AUDIO_CATEGORY_MAP[cat][primarySlug];
+      }
+    }
+  }
+
+  // 4. Fallback search across all categories by slug
   for (const cat of Object.keys(AUDIO_CATEGORY_MAP)) {
     if (AUDIO_CATEGORY_MAP[cat][slug]) {
       return AUDIO_CATEGORY_MAP[cat][slug];
