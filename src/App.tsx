@@ -64,13 +64,17 @@ const SECTION_TO_PATH: Record<string, string> = {
   terms: '/terms',
 };
 
+const hasOwn = (obj: object, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(obj, key);
+
 const getSectionFromPath = (): string => {
   const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-  return PATH_TO_SECTION[path] || 'alphabet';
+  return hasOwn(PATH_TO_SECTION, path) ? PATH_TO_SECTION[path] : 'alphabet';
 };
 
 const updateMeta = (section: string) => {
-  const meta = SECTION_META[section] || SECTION_META.alphabet;
+  const safeSection = hasOwn(SECTION_META, section) ? section : 'alphabet';
+  const meta = SECTION_META[safeSection];
   document.title = meta.title;
   const descTag = document.querySelector('meta[name="description"]');
   if (descTag) descTag.setAttribute('content', meta.description);
@@ -79,7 +83,7 @@ const updateMeta = (section: string) => {
   const ogDesc = document.querySelector('meta[property="og:description"]');
   if (ogDesc) ogDesc.setAttribute('content', meta.description);
   const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical) canonical.setAttribute('href', `https://basicenglish.school${SECTION_TO_PATH[section] || '/alphabet'}`);
+  if (canonical) canonical.setAttribute('href', `https://basicenglish.school${hasOwn(SECTION_TO_PATH, section) ? SECTION_TO_PATH[section] : '/alphabet'}`);
 };
 
 const App: React.FC = () => {
@@ -171,7 +175,7 @@ const App: React.FC = () => {
     });
     
     // Update URL without full page reload
-    const newPath = SECTION_TO_PATH[section] || '/alphabet';
+    const newPath = hasOwn(SECTION_TO_PATH, section) ? SECTION_TO_PATH[section] : '/alphabet';
     if (window.location.pathname !== newPath) {
       window.history.pushState({ section }, '', newPath);
     }

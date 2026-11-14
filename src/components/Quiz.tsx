@@ -288,7 +288,9 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
 
 const findDialogue = (phrase: string) => {
   const norm = phrase.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (CONVERSATIONAL_DIALOGUES[norm]) return CONVERSATIONAL_DIALOGUES[norm];
+  if (Object.prototype.hasOwnProperty.call(CONVERSATIONAL_DIALOGUES, norm)) {
+    return CONVERSATIONAL_DIALOGUES[norm];
+  }
   for (const [key, val] of Object.entries(CONVERSATIONAL_DIALOGUES)) {
     if (norm.includes(key) || key.includes(norm)) {
       return val;
@@ -514,7 +516,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const checkNumberEquivalence = (userAnswer: string, correctAnswer: string): boolean => {
     if (userAnswer === correctAnswer) return true;
     if (/^\d+$/.test(userAnswer)) {
-      const possibleWordForms = numberEquivalents[userAnswer] || [];
+      const possibleWordForms = Object.prototype.hasOwnProperty.call(numberEquivalents, userAnswer)
+        ? numberEquivalents[userAnswer]
+        : [];
       return possibleWordForms.some(wordForm => 
         correctAnswer === wordForm || correctAnswer.includes(wordForm)
       );
@@ -528,21 +532,23 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     return false;
   };
 
-  const levenshteinDistance = (a: string, b: string): number => {
-    const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
-    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  const levenshteinDistance = (rawA: string, rawB: string): number => {
+    const MAX_LEN = 250;
+    const a = rawA.length > MAX_LEN ? rawA.slice(0, MAX_LEN) : rawA;
+    const b = rawB.length > MAX_LEN ? rawB.slice(0, MAX_LEN) : rawB;
+    if (a.length < b.length) return levenshteinDistance(b, a);
+    if (b.length === 0) return a.length;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
     for (let i = 1; i <= a.length; i++) {
+      const curr = new Array<number>(b.length + 1);
+      curr[0] = i;
       for (let j = 1; j <= b.length; j++) {
         const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
-        );
+        curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
       }
+      prev = curr;
     }
-    return matrix[a.length][b.length];
+    return prev[b.length];
   };
 
   // Build the complete list of all curriculum questions with canonical per-word IDs
@@ -1455,7 +1461,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+    const newValue = e.target.value.slice(0, 250);
     setUserAnswer(newValue);
     setLastInput(newValue);
   };
@@ -1833,6 +1839,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             type="text"
             className="quiz-input"
             value={userAnswer}
+            maxLength={250}
             onChange={handleInputChange} 
             onKeyDown={handleKeyDown}
             placeholder="Your answer here..."
