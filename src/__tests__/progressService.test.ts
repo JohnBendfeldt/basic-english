@@ -163,4 +163,37 @@ describe('ProgressService (Guest Mode)', () => {
     expect(stats.wordsLearningCount).toBe(1);
     expect(({} as any).polluted).toBeUndefined();
   });
+
+  it('caps masteryLevel at 3 and supports overriding a missed word attempt', async () => {
+    for (let i = 1; i <= 4; i++) {
+      const res = await ProgressService.recordWordAttempt({
+        category: 'commonWords',
+        wordId: 'commonWords-Water',
+        prompt: 'Water',
+        answer: 'water',
+        isCorrect: true,
+      });
+      expect(res.masteryLevel).toBe(Math.min(i, 3));
+    }
+
+    const mastered = await ProgressService.getMasteredWordIds();
+    expect(mastered.has('commonWords-Water')).toBe(true);
+
+    await ProgressService.recordWordAttempt({
+      category: 'commonWords',
+      wordId: 'commonWords-Book',
+      prompt: 'Book',
+      answer: 'book',
+      isCorrect: false,
+    });
+    const overridden = await ProgressService.overrideWordAttempt({
+      category: 'commonWords',
+      wordId: 'commonWords-Book',
+      prompt: 'Book',
+      answer: 'book',
+    });
+    expect(overridden.timesCorrect).toBe(1);
+    expect(overridden.timesIncorrect).toBe(0);
+    expect(overridden.masteryLevel).toBe(1);
+  });
 });

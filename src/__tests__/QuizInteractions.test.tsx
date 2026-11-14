@@ -17,20 +17,21 @@ describe('Quiz Deep Interactions - Dialogues, Audio Speed Controls, Enter Key, M
     vi.restoreAllMocks();
   });
 
-  it('plays normal and 0.7x slow audio in Quiz audio toolbar and celebrates Word Mastered (5/5)', async () => {
+  it('plays normal and 0.7x slow audio in Quiz audio toolbar and celebrates Word Mastered (3/3)', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     const speakSpy = vi.spyOn(speechMod, 'speak').mockImplementation((_t, _l, _id, onEnd) => {
       if (onEnd) onEnd();
     });
     vi.spyOn(ProgressService, 'recordWordAttempt').mockResolvedValue({
       userId: 'guest_user',
       category: 'commonWords',
-      wordId: 'commonWords-Water-to-meaning',
+      wordId: 'commonWords-Water',
       prompt: 'Water',
       answer: 'Clear liquid',
-      timesCorrect: 5,
+      timesCorrect: 3,
       timesIncorrect: 0,
       lastTestedAt: new Date().toISOString(),
-      masteryLevel: 5,
+      masteryLevel: 3,
     });
 
     render(
@@ -50,15 +51,59 @@ describe('Quiz Deep Interactions - Dialogues, Audio Speed Controls, Enter Key, M
 
     // Answer correctly via Enter key and verify Word Mastered banner
     const input = screen.getByPlaceholderText('Your answer here...') as HTMLInputElement;
-    // Determine expected answer depending on randomly chosen direction
+    // Determine expected answer depending on selected direction
     const promptText = document.querySelector('.quiz-prompt-text')?.textContent || '';
-    const answerToType = promptText.includes('Water') ? 'Clear liquid' : 'Water';
+    const answerToType = promptText.includes('Water') ? 'Water' : 'Water';
 
     fireEvent.change(input, { target: { value: answerToType } });
     fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
 
     expect(await screen.findByText('Correct!')).toBeInTheDocument();
-    expect(screen.getByText(/Word Mastered \(5\/5\)!/i)).toBeInTheDocument();
+    expect(screen.getByText(/Word Mastered \(3\/3\)!/i)).toBeInTheDocument();
+  });
+
+  it('auto-plays audio once for listening questions and supports "I was right" override persistence', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.01);
+    const speakSpy = vi.spyOn(speechMod, 'speak').mockImplementation((_t, _l, _id, onEnd) => {
+      if (onEnd) onEnd();
+    });
+
+    render(
+      <Quiz
+        data={{
+          commonWords: [{ phrase: 'Water', meaning: 'Clear liquid', pronunciation: '/ˈwɔːtər/' }],
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(speakSpy).toHaveBeenCalledWith(
+        'Water',
+        'en-US',
+        'quiz-audio-controller',
+        expect.any(Function),
+        expect.any(Function),
+        expect.objectContaining({ rate: 0.92 })
+      );
+    });
+
+    const input = screen.getByPlaceholderText('Your answer here...');
+    fireEvent.change(input, { target: { value: 'wrong guess' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check Answer' }));
+
+    expect(await screen.findByText('Not quite')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /I was right/i }));
+    expect(await screen.findByText('Correct! (Overridden)')).toBeInTheDocument();
+
+    await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem('english_word_progress') || '{}');
+      expect(saved['commonWords-Water']).toMatchObject({
+        timesCorrect: 1,
+        timesIncorrect: 0,
+        masteryLevel: 1,
+      });
+    });
   });
 
   it('tracks missed words across a 5-question session, displays Words to Review recap, and starts a new quiz', async () => {

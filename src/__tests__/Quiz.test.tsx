@@ -62,19 +62,28 @@ describe('Quiz Component - Session Goals & Mastery Filtering', () => {
     expect(localStorage.getItem('english_quiz_goal')).toBe('20');
   });
 
-  it('excludes mastered words (masteryLevel >= 5) from active questions', async () => {
-    // Mock getMasteredWordIds to return 'numbers-One-to-meaning' as already mastered
+  it('excludes mastered words (masteryLevel >= 3) from active questions and filters by topic tab', async () => {
+    // Mock getMasteredWordIds to return 'numbers-One' (and legacy IDs) as already mastered
     vi.spyOn(ProgressService, 'getMasteredWordIds').mockResolvedValue(new Set([
+      'numbers-One',
       'numbers-One-to-meaning',
       'numbers-1-to-phrase'
     ]));
 
     render(<Quiz data={{
+      alphabet: [
+        { letter: 'A', character: 'A', pronunciation: '/eɪ/', example: 'as in Apple' }
+      ],
       numbers: [
         { phrase: 'One', meaning: '1', pronunciation: '/wʌn/' },
         { phrase: 'Two', meaning: '2', pronunciation: '/tuː/' }
       ]
     }} />);
+
+    // Switch topic tab to Numbers & Time
+    const numbersTab = await screen.findByRole('tab', { name: /Numbers & Time/i });
+    fireEvent.click(numbersTab);
+    expect(numbersTab).toHaveAttribute('aria-selected', 'true');
 
     // Wait for mastered words to load
     await waitFor(() => {

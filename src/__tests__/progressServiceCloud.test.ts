@@ -16,6 +16,7 @@ const makeChain = (result: Result) => {
   c.upsert = vi.fn(() => c);
   c.insert = vi.fn(() => c);
   c.single = vi.fn(() => Promise.resolve(result));
+  c.maybeSingle = vi.fn(() => Promise.resolve(result));
   c.then = (res: (v: Result) => unknown, rej: (e: unknown) => unknown) =>
     Promise.resolve(result).then(res, rej);
   return c;
@@ -60,10 +61,10 @@ describe('ProgressService - Storage Hardening, Legacy Migration & Signed-In Clou
           wordId: 'alphabet-A',
           prompt: 'A',
           answer: 'Apple',
-          timesCorrect: 5,
+          timesCorrect: 3,
           timesIncorrect: 0,
           lastTestedAt: '2026-01-01T00:00:00Z',
-          masteryLevel: 5,
+          masteryLevel: 3,
         },
       };
       localStorage.setItem('russian_quiz_sessions', JSON.stringify(legacySessions));
@@ -123,16 +124,16 @@ describe('ProgressService - Storage Hardening, Legacy Migration & Signed-In Clou
         word_id: 'words-water',
         prompt: 'Water',
         answer: 'Liquid',
-        times_correct: 5,
+        times_correct: 3,
         times_incorrect: 1,
         last_tested_at: '2026-11-13T00:00:00Z',
-        mastery_level: 5,
+        mastery_level: 3,
       };
 
       const { chains } = mockSignedIn({
         word_progress: [
           // 1st call: select existing
-          { data: { ...savedRow, times_correct: 4, mastery_level: 5 } },
+          { data: { ...savedRow, times_correct: 2, mastery_level: 3 } },
           // 2nd call: upsert fails due to missing 'target' column on older DB
           { data: null, error: { message: "Could not find the 'target' column of 'word_progress'" } },
           // 3rd call: retry without target succeeds
@@ -151,8 +152,8 @@ describe('ProgressService - Storage Hardening, Legacy Migration & Signed-In Clou
 
       expect(chains.word_progress).toHaveLength(3);
       expect(res.userId).toBe('user-123');
-      expect(res.masteryLevel).toBe(5);
-      expect(res.timesCorrect).toBe(5);
+      expect(res.masteryLevel).toBe(3);
+      expect(res.timesCorrect).toBe(3);
     });
 
     it('falls back to localStorage when Supabase word upsert returns an error or throws', async () => {
@@ -192,8 +193,8 @@ describe('ProgressService - Storage Hardening, Legacy Migration & Signed-In Clou
       localStorage.setItem(
         'english_word_progress',
         JSON.stringify({
-          'local-mastered': { wordId: 'local-mastered', masteryLevel: 5 },
-          'local-learning': { wordId: 'local-learning', masteryLevel: 3 },
+          'local-mastered': { wordId: 'local-mastered', masteryLevel: 3 },
+          'local-learning': { wordId: 'local-learning', masteryLevel: 2 },
         })
       );
       mockSignedIn({
@@ -260,7 +261,7 @@ describe('ProgressService - Storage Hardening, Legacy Migration & Signed-In Clou
         },
         word_progress: {
           data: [
-            { id: 'w1', user_id: 'user-123', category: 'words', word_id: 'water', prompt: 'Water', answer: 'Drink', times_correct: 5, times_incorrect: 0, last_tested_at: 't', mastery_level: 5 },
+            { id: 'w1', user_id: 'user-123', category: 'words', word_id: 'water', prompt: 'Water', answer: 'Drink', times_correct: 3, times_incorrect: 0, last_tested_at: 't', mastery_level: 3 },
             { id: 'w2', user_id: 'user-123', category: 'words', word_id: 'bread', prompt: 'Bread', answer: 'Food', times_correct: 0, times_incorrect: 3, last_tested_at: 't', mastery_level: 0 },
           ],
         },
