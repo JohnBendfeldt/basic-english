@@ -294,7 +294,10 @@ const App: React.FC = () => {
                 <circle cx="40" cy="31.5" r="1.5" fill="url(#enGoldGrad)" />
               </g>
             </svg>
-            Basic English
+            <span className="brand-title-group">
+              <span className="brand-title-main">Basic English</span>
+              <span className="brand-parent-tag">by Basic Language School</span>
+            </span>
           </h1>
           <div className="header-actions">
             <a
