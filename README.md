@@ -7,7 +7,7 @@ An interactive, responsive English language learning application featuring pre-r
 [![TypeScript](https://img.shields.io/badge/TypeScript%205-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Vite](https://img.shields.io/badge/Vite%206-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Vitest](https://img.shields.io/badge/Vitest-101_Passing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-112_Passing-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20RLS-3ECF8E?style=for-the-badge&logo=supabase&logoColor=black)](https://supabase.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready-f59e0b?style=for-the-badge&logo=pwa&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps)
 [![Netlify](https://img.shields.io/badge/Hosted%20on-Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://basicenglish.school)
@@ -38,7 +38,7 @@ Built with modern web performance and security in mind, it pairs pre-rendered ne
 * **🎯 Adaptive Quiz Engine (`/quiz`)**:
   * Multiple quiz modes (definition-to-word, listening/audio-to-word, phonics, and mixed categories) with Levenshtein-distance fuzzy matching to forgive minor spelling typos.
   * Real-time answer validation, synonym checking, non-leaking hints, and end-of-quiz recap breakdowns.
-  * Spaced-repetition mastery tracking (levels `0`–`5`) that prioritizes unmastered and missed items.
+  * Spaced-repetition mastery tracking (levels `0`–`3`) that prioritizes unmastered and missed items.
 * **☁️ Guest-First Progress & OAuth Cloud Sync**:
   * **100% Playable Without Login**: Guest progress is persisted locally in `localStorage` and viewable anytime in the **My Stats** dashboard.
   * **1-Click Single Sign-On**: Optional sign-in via **Google**, **Microsoft Entra ID**, or **GitHub** (powered by Supabase Auth OAuth 2.0 / OIDC) automatically migrates guest progress to PostgreSQL and syncs across devices.
@@ -127,6 +127,13 @@ The application is configured for deployment on **Netlify** via [`netlify.toml`]
 
 ---
 
+## 🤝 Contributing & Security
+
+* **Contributing**: Curriculum refinements, phonics/definition fixes, accessibility improvements, and bug fixes with tests are welcome — please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
+* **Security**: Please report suspected vulnerabilities privately rather than opening a public issue; see [`SECURITY.md`](SECURITY.md) for disclosure instructions.
+
+---
+
 ## 👤 Author
 
 **John Bendfeldt**  
@@ -137,4 +144,6 @@ The application is configured for deployment on **Netlify** via [`netlify.toml`]
 ---
 
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project's source code is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+> **Branding Note**: While the source code is open source under MIT, the **Basic English** / **Basic Language School** names, domain branding (`basicenglish.school`), and custom academic emblems are reserved for the official platform.
