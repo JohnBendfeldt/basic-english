@@ -12,6 +12,8 @@ const getGuestUserId = (): string => 'guest_user';
 // LOCAL STORAGE HELPERS
 // ==========================================
 
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 const getLocalSessions = (): QuizSession[] => {
   try {
     let raw = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
@@ -23,7 +25,9 @@ const getLocalSessions = (): QuizSession[] => {
         localStorage.removeItem(LEGACY_STORAGE_SESSIONS_KEY);
       }
     }
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.warn('Failed to parse local quiz sessions:', err);
     return [];
@@ -49,7 +53,18 @@ const getLocalWordProgress = (): Record<string, WordProgress> => {
         localStorage.removeItem(LEGACY_STORAGE_WORDS_KEY);
       }
     }
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const safeRecord: Record<string, WordProgress> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      if (!UNSAFE_KEYS.has(key) && val && typeof val === 'object') {
+        safeRecord[key] = val as WordProgress;
+      }
+    }
+    return safeRecord;
   } catch (err) {
     console.warn('Failed to parse local word progress:', err);
     return {};
@@ -102,22 +117,36 @@ export class ProgressService {
           const currentMastery = existing?.mastery_level || 0;
           const masteryLevel = Math.max(0, Math.min(5, currentMastery + (isCorrect ? 1 : -1)));
 
-          const { data, error } = await supabase
+          const baseRow = {
+            user_id: user.id,
+            category,
+            word_id: wordId,
+            prompt,
+            answer,
+            times_correct: timesCorrect,
+            times_incorrect: timesIncorrect,
+            last_tested_at: now,
+            mastery_level: masteryLevel
+          };
+
+          let { data, error } = await supabase
             .from('word_progress')
             .upsert({
-              user_id: user.id,
-              category,
-              word_id: wordId,
-              prompt,
-              answer,
-              target: target || existing?.target || prompt,
-              times_correct: timesCorrect,
-              times_incorrect: timesIncorrect,
-              last_tested_at: now,
-              mastery_level: masteryLevel
+              ...baseRow,
+              target: target || existing?.target || prompt
             }, { onConflict: 'user_id,word_id' })
             .select()
             .single();
+
+          if (error && String(error.message || '').includes('target')) {
+            const retry = await supabase
+              .from('word_progress')
+              .upsert(baseRow, { onConflict: 'user_id,word_id' })
+              .select()
+              .single();
+            data = retry.data;
+            error = retry.error;
+          }
 
           if (!error && data) {
             return {
@@ -332,11 +361,14 @@ export class ProgressService {
     return this.aggregateStats(localSessions, localWords);
   }
 
+  private static syncInFlight = false;
+
   /**
    * Sync guest progress to Supabase when user logs in
    */
   static async syncGuestDataToCloud(): Promise<void> {
-    if (!supabase) return;
+    if (!supabase || this.syncInFlight) return;
+    this.syncInFlight = true;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -346,6 +378,9 @@ export class ProgressService {
 
       // If no local data, nothing to sync
       if (localSessions.length === 0 && localWords.length === 0) return;
+
+      let wordsSynced = true;
+      let sessionsSynced = true;
 
       // Sync word progress
       if (localWords.length > 0) {
@@ -361,9 +396,10 @@ export class ProgressService {
           mastery_level: w.masteryLevel
         }));
 
-        await supabase
+        const { error } = await supabase
           .from('word_progress')
           .upsert(payload, { onConflict: 'user_id,word_id' });
+        if (error) wordsSynced = false;
       }
 
       // Sync quiz sessions
@@ -376,14 +412,27 @@ export class ProgressService {
           completed_at: s.completedAt
         }));
 
-        await supabase
+        const { error } = await supabase
           .from('quiz_sessions')
           .insert(sessionPayload);
+        if (error) sessionsSynced = false;
       }
 
-      console.info('Successfully synced guest progress to Supabase account.');
+      // Clear local guest caches after successful upload to avoid duplicate session inserts on future logins
+      if (wordsSynced) {
+        localStorage.removeItem(LOCAL_STORAGE_WORDS_KEY);
+      }
+      if (sessionsSynced) {
+        localStorage.removeItem(LOCAL_STORAGE_SESSIONS_KEY);
+      }
+
+      if (wordsSynced && sessionsSynced) {
+        console.info('Successfully synced guest progress to Supabase account.');
+      }
     } catch (err) {
       console.warn('Could not sync guest progress to cloud:', err);
+    } finally {
+      this.syncInFlight = false;
     }
   }
 
