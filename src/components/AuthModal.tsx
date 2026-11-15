@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FaTimes, FaGoogle, FaMicrosoft, FaGithub, FaLock } from 'react-icons/fa';
 import { signInWithGoogle, signInWithEntra, signInWithGithub, isSupabaseConfigured } from '../services/supabaseClient';
+import { useModalAccessibility } from '../utils/useModalAccessibility';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -27,7 +28,10 @@ const sanitizeAuthError = (
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [loadingProvider, setLoadingProvider] = useState<'google' | 'azure' | 'github' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const configured = isSupabaseConfigured();
+
+  useModalAccessibility(isOpen, onClose, modalRef);
 
   if (!isOpen) return null;
 
@@ -71,33 +75,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="auth-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="auth-modal-container" onClick={(e) => e.stopPropagation()}>
-        <button className="auth-modal-close" onClick={onClose} aria-label="Close modal">
-          <FaTimes />
+    <div className="auth-modal-backdrop" onClick={onClose} role="presentation">
+      <div
+        ref={modalRef}
+        className="auth-modal-container"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" className="auth-modal-close" onClick={onClose} aria-label="Close modal">
+          <FaTimes aria-hidden="true" />
         </button>
 
         <div className="auth-modal-header">
-          <div className="auth-modal-icon">
-            <FaLock />
+          <div className="auth-modal-icon" aria-hidden="true">
+            <FaLock aria-hidden="true" />
           </div>
           <div className="auth-ecosystem-badge">
             <span aria-hidden="true">🌐</span> Basic Language School Account
           </div>
-          <h2>Sync Your Learning Progress</h2>
+          <h2 id="auth-modal-title">Sync Your Learning Progress</h2>
           <p>
             Sign in with your <strong>Basic Language School</strong> account to save your quiz history, track words mastered, and sync across all 15+ language apps.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="auth-modal-alert auth-modal-error">
+          <div className="auth-modal-alert auth-modal-error" role="alert">
             {errorMessage}
           </div>
         )}
 
         {!configured && (
-          <div className="auth-modal-alert auth-modal-info">
+          <div className="auth-modal-alert auth-modal-info" role="status">
             <strong>Running in Guest Mode:</strong> Your progress is currently saved offline in your browser. To enable live cloud sync, connect your Supabase project credentials in <code>.env.local</code>.
           </div>
         )}
@@ -105,14 +117,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <div className="auth-providers-grid">
           {/* Google */}
           <button
+            type="button"
             className={`auth-tile-btn google-tile ${loadingProvider === 'google' ? 'loading' : ''}`}
             onClick={handleGoogleLogin}
             disabled={loadingProvider !== null}
             title="Sign in with Google (Gmail)"
             aria-label="Sign in with Google"
           >
-            <div className="auth-tile-icon-wrap google">
-              <FaGoogle className="tile-icon" />
+            <div className="auth-tile-icon-wrap google" aria-hidden="true">
+              <FaGoogle className="tile-icon" aria-hidden="true" />
             </div>
             <div className="auth-tile-text">
               <span className="tile-name">Google</span>
@@ -122,14 +135,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
           {/* GitHub */}
           <button
+            type="button"
             className={`auth-tile-btn github-tile ${loadingProvider === 'github' ? 'loading' : ''}`}
             onClick={handleGithubLogin}
             disabled={loadingProvider !== null}
             title="Sign in with GitHub"
             aria-label="Sign in with GitHub"
           >
-            <div className="auth-tile-icon-wrap github">
-              <FaGithub className="tile-icon" />
+            <div className="auth-tile-icon-wrap github" aria-hidden="true">
+              <FaGithub className="tile-icon" aria-hidden="true" />
             </div>
             <div className="auth-tile-text">
               <span className="tile-name">GitHub</span>
@@ -139,14 +153,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
           {/* Microsoft */}
           <button
+            type="button"
             className={`auth-tile-btn entra-tile ${loadingProvider === 'azure' ? 'loading' : ''}`}
             onClick={handleEntraLogin}
             disabled={loadingProvider !== null}
             title="Sign in with Microsoft Entra ID"
             aria-label="Sign in with Microsoft Entra ID"
           >
-            <div className="auth-tile-icon-wrap entra">
-              <FaMicrosoft className="tile-icon" />
+            <div className="auth-tile-icon-wrap entra" aria-hidden="true">
+              <FaMicrosoft className="tile-icon" aria-hidden="true" />
             </div>
             <div className="auth-tile-text">
               <span className="tile-name">Microsoft</span>
@@ -156,7 +171,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {loadingProvider && (
-          <div className="auth-loading-notice">
+          <div className="auth-loading-notice" role="status" aria-live="polite">
             Connecting to {loadingProvider === 'azure' ? 'Microsoft' : loadingProvider === 'github' ? 'GitHub' : 'Google'}...
           </div>
         )}

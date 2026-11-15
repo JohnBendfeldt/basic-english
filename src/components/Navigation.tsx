@@ -22,17 +22,31 @@ const Navigation: React.FC<NavigationProps> = ({
   ];
 
   return (
-    <nav className={`navigation ${isOpen ? 'open' : ''}`}>
+    <nav className={`navigation ${isOpen ? 'open' : ''}`} aria-label="Main navigation">
       <ul>
-        {navItems.map(item => (
-          <li
-            key={item.id}
-            className={activeSection === item.id ? 'active' : ''}
-            onClick={() => setActiveSection(item.id)}
-          >
-            {item.label}
-          </li>
-        ))}
+        {navItems.map(item => {
+          const isActive = activeSection === item.id;
+          return (
+            <li
+              key={item.id}
+              className={isActive ? 'active' : ''}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setActiveSection(item.id);
+                }
+              }}
+            >
+              <button
+                type="button"
+                className={`nav-tab-btn ${isActive ? 'active' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => setActiveSection(item.id)}
+              >
+                {item.label}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

@@ -158,16 +158,29 @@ describe('Speech Audio Engine & PronunciationButton', () => {
     );
 
     const btn = await screen.findByRole('button', { name: 'Hear Hello' });
-    await waitFor(() => expect(btn).not.toBeDisabled());
+    await waitFor(() => expect(btn).toHaveAttribute('aria-disabled', 'false'));
+
+    btn.focus();
+    expect(document.activeElement).toBe(btn);
 
     fireEvent.click(btn);
+    // Focus MUST remain on the button during playback (WCAG 2.4.3 / 3.2.1)
+    expect(document.activeElement).toBe(btn);
+    expect(btn).not.toBeDisabled();
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
     expect(btn).toHaveClass('playing');
     expect(btn).toHaveAttribute('aria-label', 'Speaking...');
     expect(FakeAudio.instances).toHaveLength(1);
 
+    // Clicking again while playing is safely ignored without losing focus
+    fireEvent.click(btn);
+    expect(FakeAudio.instances).toHaveLength(1);
+    expect(document.activeElement).toBe(btn);
+
     // Changing text resets playing state immediately
     rerender(<PronunciationButton text="Goodbye" audioCategory="phrases" label="Hear Goodbye" />);
     expect(btn).not.toHaveClass('playing');
+    expect(btn).toHaveAttribute('aria-disabled', 'false');
 
     // Click again and complete via ended event
     fireEvent.click(btn);
@@ -176,6 +189,8 @@ describe('Speech Audio Engine & PronunciationButton', () => {
       FakeAudio.instances[FakeAudio.instances.length - 1].emit('ended');
     });
     expect(btn).not.toHaveClass('playing');
+    expect(btn).toHaveAttribute('aria-disabled', 'false');
+    expect(document.activeElement).toBe(btn);
 
     unmount();
   });

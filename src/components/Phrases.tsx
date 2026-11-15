@@ -9,7 +9,7 @@ interface PhraseCardProps {
   pronunciation: string;
   isRevealed: boolean;
   onToggleReveal: () => void;
-  animationKey: number;
+  cardIndex: number;
   contentType?: 'phrases' | 'words' | 'numbers';
   icon?: string;
 }
@@ -20,22 +20,22 @@ const PhraseCard: React.FC<PhraseCardProps> = ({
   pronunciation, 
   isRevealed, 
   onToggleReveal,
-  animationKey,
+  cardIndex,
   contentType = 'phrases',
   icon
 }) => {
   const targetPhrase = phrase || '';
   const definition = meaning || '';
+  const detailsId = `phrase-details-${contentType}-${cardIndex}`;
 
   return (
     <div 
-      className={`phrase-card ${isRevealed ? 'phrase-revealed' : 'phrase-hidden'}`} 
-      key={`card-${animationKey}`}
+      className={`phrase-card ${isRevealed ? 'phrase-revealed' : 'phrase-hidden'}`}
     >
       <div className="phrase-header">
         <div className="phrase-title-group">
           {icon && (
-            <span className="phrase-icon-badge" role="img" aria-hidden="true">
+            <span className="phrase-icon-badge" aria-hidden="true">
               {icon}
             </span>
           )}
@@ -50,44 +50,40 @@ const PhraseCard: React.FC<PhraseCardProps> = ({
         />
       </div>
       <div className="phrase-content">
-        {isRevealed ? (
-          <div 
-            className="phrase-revealed-wrap"
-            role="button"
-            tabIndex={0}
-            aria-expanded={true}
-            aria-label={`Hide translation for ${targetPhrase}`}
-            onClick={onToggleReveal}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onToggleReveal();
-              }
-            }}
-          >
-            <div className="phrase-revealed-body">
-              <p className="english phrase-definition">{definition}</p>
-              <p className="pronunciation">
-                <span className="pronunciation-label">Pronunciation:</span> {pronunciation}
-              </p>
+        <div
+          id={detailsId}
+          className="phrase-live-region"
+          aria-live="polite"
+        >
+          {isRevealed && (
+            <div 
+              className="phrase-revealed-wrap"
+              onClick={onToggleReveal}
+            >
+              <div className="phrase-revealed-body">
+                <p className="english phrase-definition">{definition}</p>
+                <p className="pronunciation">
+                  <span className="pronunciation-label">Pronunciation:</span> {pronunciation}
+                </p>
+              </div>
             </div>
-            <div className="card-hide-cue">
-              <FaSyncAlt className="cue-icon mini" aria-hidden="true" />
-              <span>Tap to hide</span>
-            </div>
-          </div>
-        ) : (
-          <button 
-            type="button"
-            className="phrase-reveal-btn" 
-            aria-expanded={false}
-            aria-label={`Reveal translation for ${targetPhrase}`}
-            onClick={onToggleReveal}
-          >
-            <FaSyncAlt className="cue-icon" aria-hidden="true" />
-            <span>Tap to reveal</span>
-          </button>
-        )}
+          )}
+        </div>
+        <button 
+          type="button"
+          className={isRevealed ? 'card-hide-cue phrase-toggle-btn' : 'phrase-reveal-btn phrase-toggle-btn'}
+          aria-expanded={isRevealed}
+          aria-controls={detailsId}
+          aria-label={
+            isRevealed
+              ? `Hide translation for ${targetPhrase}`
+              : `Reveal translation for ${targetPhrase}`
+          }
+          onClick={onToggleReveal}
+        >
+          <FaSyncAlt className={isRevealed ? 'cue-icon mini' : 'cue-icon'} aria-hidden="true" />
+          <span>{isRevealed ? 'Tap to hide' : 'Tap to reveal'}</span>
+        </button>
       </div>
     </div>
   );
@@ -107,18 +103,17 @@ const Phrases: React.FC<PhrasesProps> = ({
   const [revealedCards, setRevealedCards] = useState<boolean[]>(
     new Array(data.length).fill(false)
   );
-  const [lastToggledCard, setLastToggledCard] = useState<number | null>(null);
 
   useEffect(() => {
     setRevealedCards(new Array(data.length).fill(false));
-    setLastToggledCard(null);
   }, [data, title]);
 
   const toggleReveal = (index: number) => {
-    const newRevealedCards = [...revealedCards];
-    newRevealedCards[index] = !newRevealedCards[index];
-    setRevealedCards(newRevealedCards);
-    setLastToggledCard(index);
+    setRevealedCards((prev) => {
+      const next = [...prev];
+      next[index] = !next[index];
+      return next;
+    });
   };
 
   const allRevealed = revealedCards.length > 0 && revealedCards.every(Boolean);
@@ -140,6 +135,7 @@ const Phrases: React.FC<PhrasesProps> = ({
             type="button"
             className="study-toggle-btn"
             onClick={toggleAll}
+            aria-pressed={allRevealed}
             aria-label={allRevealed ? `Hide all ${title.toLowerCase()}` : `Reveal all ${title.toLowerCase()}`}
           >
             <FaSyncAlt className={`toggle-btn-icon ${allRevealed ? 'rotated' : ''}`} aria-hidden="true" />
@@ -151,14 +147,14 @@ const Phrases: React.FC<PhrasesProps> = ({
       <div className="phrases-container">
         {data.map((item, index) => (
           <PhraseCard 
-            key={index}
+            key={item.phrase ? `${contentType}-${item.phrase}` : index}
             phrase={item.phrase}
             meaning={item.meaning}
             pronunciation={item.pronunciation}
             icon={item.icon}
-            isRevealed={revealedCards[index]}
+            isRevealed={Boolean(revealedCards[index])}
             onToggleReveal={() => toggleReveal(index)}
-            animationKey={lastToggledCard === index ? Date.now() : index}
+            cardIndex={index}
             contentType={contentType}
           />
         ))}
