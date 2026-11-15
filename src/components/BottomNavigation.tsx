@@ -33,19 +33,24 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   return (
-    <nav className="bottom-navigation">
-      {navItems.map(item => (
-        <button
-          key={item.id}
-          className={`bottom-nav-item ${activeSection === item.id ? 'active' : ''}`}
-          onClick={() => handleNavClick(item.id)}
-          aria-label={`Switch to ${item.label} section`}
-          data-section={item.id}
-        >
-          <div className="bottom-nav-icon">{item.icon}</div>
-          <span className="bottom-nav-label">{item.label}</span>
-        </button>
-      ))}
+    <nav className="bottom-navigation" aria-label="Bottom navigation">
+      {navItems.map(item => {
+        const isActive = activeSection === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={`bottom-nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => handleNavClick(item.id)}
+            aria-label={`Switch to ${item.label} section`}
+            aria-current={isActive ? 'page' : undefined}
+            data-section={item.id}
+          >
+            <div className="bottom-nav-icon" aria-hidden="true">{item.icon}</div>
+            <span className="bottom-nav-label">{item.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 };

@@ -10,6 +10,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onNavigate }) => {
       <div className="legal-card">
         <div className="legal-nav-bar">
           <button 
+            type="button"
             className="legal-back-btn" 
             onClick={() => onNavigate('alphabet')}
             aria-label="Back to practice lessons"

@@ -13,7 +13,7 @@
       --primary-dark: #3730a3;
       --accent: #0ea5e9;
       --text: #1e293b;
-      --text-muted: #64748b;
+      --text-muted: #475569;
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --border: #e2e8f0;
@@ -26,8 +26,38 @@
       background-color: var(--bg);
       padding: 0 1rem 3rem;
     }
+    .skip-link {
+      position: fixed;
+      top: -100px;
+      left: 1rem;
+      z-index: 9999;
+      padding: 0.75rem 1.25rem;
+      background-color: #0f172a;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: underline;
+      border: 2px solid #ffffff;
+      border-radius: 10px;
+    }
+    .skip-link:focus,
+    .skip-link:focus-visible {
+      top: 0.75rem;
+      outline: 3px solid #fbbf24;
+      outline-offset: 2px;
+    }
+    a:focus-visible,
+    button:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+    header a:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
     header {
-      background: linear-gradient(135deg, #4f46e5, #312e81);
+      background: linear-gradient(135deg, #3730a3, #1e1b4b);
       color: white;
       padding: 1.5rem 1rem;
       margin: -1rem -1rem 2rem;
@@ -62,13 +92,17 @@
       color: white;
       text-decoration: none;
       font-size: 0.9rem;
-      font-weight: 500;
-      padding: 0.4rem 0.8rem;
+      font-weight: 600;
+      padding: 0.45rem 0.85rem;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
       border-radius: 6px;
-      background: rgba(255,255,255,0.15);
+      background: rgba(15, 23, 42, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.35);
       transition: background 0.2s;
     }
-    .back-link:hover { background: rgba(255,255,255,0.25); }
+    .back-link:hover { background: rgba(15, 23, 42, 0.5); }
     main {
       max-width: 800px;
       margin: 0 auto;
@@ -111,6 +145,12 @@
       color: var(--primary);
       text-decoration: none;
     }
+    main a,
+    footer a {
+      color: var(--primary-dark);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
     a:hover {
       text-decoration: underline;
     }
@@ -129,20 +169,28 @@
       font-size: 0.85rem;
       color: var(--text-muted);
     }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <header>
     <div class="header-inner">
       <a href="/" class="logo-group">
-        <span class="logo-badge">🎓</span>
+        <span class="logo-badge" aria-hidden="true">🎓</span>
         Basic English
       </a>
       <a href="/" class="back-link">← Back to App</a>
     </div>
   </header>
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <h1>Privacy Policy</h1>
     <p class="last-updated">Last Updated: November 13, 2026</p>
 

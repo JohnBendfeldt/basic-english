@@ -4,6 +4,34 @@ import PronunciationButton from './PronunciationButton';
 import { ProgressService } from '../services/progressService';
 import { MASTERY_THRESHOLD } from '../types/progress';
 import { speak } from '../utils/speech';
+import { scrollToTop } from '../utils/useModalAccessibility';
+
+const renderClozeText = (text: string): React.ReactNode => {
+  if (!text || !text.includes('_')) return text;
+  const parts = text.split(/(_{1,})/g);
+  return parts.map((part, idx) => {
+    if (/^_+$/.test(part)) {
+      return (
+        <React.Fragment key={idx}>
+          <span aria-hidden="true">{part}</span>
+          <span className="visually-hidden"> blank </span>
+        </React.Fragment>
+      );
+    }
+    return part;
+  });
+};
+
+const renderLeadingEmojiBadge = (badge: string): React.ReactNode => {
+  const spaceIdx = badge.indexOf(' ');
+  if (spaceIdx <= 0) return badge;
+  return (
+    <>
+      <span aria-hidden="true">{badge.slice(0, spaceIdx + 1)}</span>
+      {badge.slice(spaceIdx + 1)}
+    </>
+  );
+};
 
 // Define interfaces for the data structure
 interface AlphabetItem {
@@ -365,6 +393,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const [_lastInput, setLastInput] = useState('');
   const lastWordAttemptPromiseRef = useRef<Promise<unknown> | null>(null);
   const lastAutoPlayedKeyRef = useRef<string | null>(null);
+  const suppressAutoInputFocusRef = useRef(false);
 
   // Ref to track questions asked in current rotation
   const askedQuestionsRef = useRef<Set<string>>(new Set());
@@ -397,7 +426,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   // Ensure view glides to top when quiz completes so user never misses celebration banner
   useEffect(() => {
     if (isSessionComplete) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     }
   }, [isSessionComplete]);
 
@@ -977,6 +1006,10 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       }
 
       setTimeout(() => {
+        if (suppressAutoInputFocusRef.current) {
+          suppressAutoInputFocusRef.current = false;
+          return;
+        }
         if (inputRef.current) {
           inputRef.current.focus({ preventScroll: true });
         }
@@ -1003,7 +1036,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   const handleCompleteSession = useCallback(async () => {
     setIsSessionComplete(true);
     sessionStatsRef.current.isSaved = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
     try {
       await ProgressService.recordQuizSession({
         category: activeCategory === 'all' ? 'mixed' : activeCategory,
@@ -1016,7 +1049,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   }, [activeCategory, sessionScore, sessionGoal]);
 
   const startNewQuizSession = useCallback((newGoal?: number, newCategory?: QuizCategoryFilter) => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
     const goal = newGoal !== undefined ? newGoal : sessionGoal;
     const cat = newCategory !== undefined ? newCategory : activeCategory;
     if (newGoal !== undefined && newGoal !== sessionGoal) {
@@ -1058,6 +1091,43 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     startNewQuizSession(sessionGoal, cat);
   }, [isSessionComplete, activeCategory, sessionGoal, startNewQuizSession]);
 
+  const handleCategoryTabKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>, fallbackIndex?: number) => {
+      const tablist = e.currentTarget.getAttribute('role') === 'tablist'
+        ? e.currentTarget
+        : e.currentTarget.closest('[role="tablist"]');
+      const tabs = tablist ? Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]')) : [];
+      const focusedIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
+      const activeIdx = QUIZ_CATEGORIES.findIndex(c => c.id === activeCategory);
+      const currentIndex =
+        focusedIndex >= 0
+          ? focusedIndex
+          : typeof fallbackIndex === 'number'
+          ? fallbackIndex
+          : Math.max(0, activeIdx);
+
+      let nextIndex: number | null = null;
+      if (e.key === 'ArrowRight') {
+        nextIndex = (currentIndex + 1) % QUIZ_CATEGORIES.length;
+      } else if (e.key === 'ArrowLeft') {
+        nextIndex = (currentIndex - 1 + QUIZ_CATEGORIES.length) % QUIZ_CATEGORIES.length;
+      } else if (e.key === 'Home') {
+        nextIndex = 0;
+      } else if (e.key === 'End') {
+        nextIndex = QUIZ_CATEGORIES.length - 1;
+      }
+
+      if (nextIndex !== null) {
+        e.preventDefault();
+        const nextCat = QUIZ_CATEGORIES[nextIndex];
+        suppressAutoInputFocusRef.current = true;
+        handleCategoryChange(nextCat.id);
+        tabs[nextIndex]?.focus();
+      }
+    },
+    [activeCategory, handleCategoryChange]
+  );
+
   const handleGoalChange = (newGoal: number) => {
     if (newGoal === sessionGoal) return;
     localStorage.setItem('english_quiz_goal', newGoal.toString());
@@ -1067,7 +1137,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     if (sessionAnswered >= newGoal) {
       setIsSessionComplete(true);
       sessionStatsRef.current.isSaved = true;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
       ProgressService.recordQuizSession({
         category: activeCategory === 'all' ? 'mixed' : activeCategory,
         score: sessionScore,
@@ -1076,32 +1146,51 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     }
   };
 
-  // Global event listener for Enter key
+  // Global event listener for Enter key (never hijacks interactive controls or open modals/menus)
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        if (isSessionComplete) {
-          e.preventDefault();
-          startNewQuizSession();
-        } else if (showNext && !(e.target instanceof HTMLInputElement)) {
-          e.preventDefault();
-          if (sessionAnswered >= sessionGoal) {
-            handleCompleteSession();
-          } else {
-            handleNextQuestion();
-          }
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+
+      if (document.querySelector('[role="dialog"], [role="menu"]')) {
+        return;
+      }
+
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        target &&
+        target.closest(
+          'button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [role="menuitem"], [role="link"]'
+        )
+      ) {
+        return;
+      }
+
+      if (isSessionComplete) {
+        e.preventDefault();
+        startNewQuizSession();
+      } else if (showNext) {
+        e.preventDefault();
+        if (sessionAnswered >= sessionGoal) {
+          handleCompleteSession();
+        } else {
+          handleNextQuestion();
         }
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [isSessionComplete, showNext, sessionAnswered, sessionGoal, handleCompleteSession, handleNextQuestion, startNewQuizSession]);
 
-  // Focus input when new question appears
+  // Focus input when new question appears (unless navigating topic tabs via arrow keys)
   useEffect(() => {
+    if (suppressAutoInputFocusRef.current) {
+      suppressAutoInputFocusRef.current = false;
+      return;
+    }
     if (currentQuestion && !showNext && !isSessionComplete && inputRef.current) {
       inputRef.current.focus({ preventScroll: true });
     }
@@ -1508,7 +1597,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         <div className="quiz-card quiz-recap-card">
           <div className="recap-header">
             <div className="recap-title-row">
-              <span className="recap-icon-inline">{recapIcon}</span>
+              <span className="recap-icon-inline" aria-hidden="true">{recapIcon}</span>
               <h3 className="recap-headline-title">{headlineTitle}</h3>
             </div>
             <div className="recap-subtitle-row">
@@ -1517,7 +1606,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                   <span className="recap-pronunciation">
                     Pronunciation: <span className="pronunciation-text">{headlinePronunciation}</span>
                   </span>
-                  <span className="recap-separator">·</span>
+                  <span className="recap-separator" aria-hidden="true">·</span>
                 </>
               )}
               <span className="recap-english-subtitle">{headlineEnglish}</span>
@@ -1560,37 +1649,37 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
             <div className="recap-stats-grid" role="group" aria-label="Session summary stats">
               <div className="recap-stat-card">
-                <span className="stat-label">🎯 Goal</span>
+                <span className="stat-label"><span aria-hidden="true">🎯 </span>Goal</span>
                 <span className="stat-value">{sessionGoal} Qs</span>
               </div>
               <div className="recap-stat-card correct">
-                <span className="stat-label">✅ Correct</span>
+                <span className="stat-label"><span aria-hidden="true">✅ </span>Correct</span>
                 <span className="stat-value">{sessionScore}</span>
               </div>
               <div className="recap-stat-card highlight">
-                <span className="stat-label">🏆 Mastered</span>
+                <span className="stat-label"><span aria-hidden="true">🏆 </span>Mastered</span>
                 <span className="stat-value">{activeMasteredCount} / {activeTotalWords}</span>
               </div>
               <div className="recap-stat-card pool-left">
-                <span className="stat-label">📚 Remaining</span>
+                <span className="stat-label"><span aria-hidden="true">📚 </span>Remaining</span>
                 <span className="stat-value">{activeRemainingToMaster}</span>
               </div>
             </div>
 
             <p className="recap-save-notice">
-              <FaCheckCircle className="notice-icon" /> Logged as 1 completed quiz in your learning progress
+              <FaCheckCircle className="notice-icon" aria-hidden="true" /> Logged as 1 completed quiz in your learning progress
             </p>
           </div>
 
           {missedInSession.length > 0 && (
             <div className="recap-missed-section">
-              <h4>Words to Review from This Session ({missedInSession.length})</h4>
+              <h3>Words to Review from This Session ({missedInSession.length})</h3>
               <p className="missed-hint">Listen to the correct pronunciation to reinforce your memory:</p>
               <div className="missed-words-list">
                 {missedInSession.map((item, idx) => (
                   <div key={idx} className="missed-word-item">
                     <div className="missed-word-details">
-                      <div className="missed-word-prompt">{item.prompt}</div>
+                      <div className="missed-word-prompt">{renderClozeText(item.prompt)}</div>
                       <div className="missed-word-answers">
                         <span className="correct-answer-text">Answer: <strong>{item.answer.split('/')[0]}</strong></span>
                         {item.userAnswer && (
@@ -1611,8 +1700,13 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           <div className="recap-next-session">
             <div className="recap-topic-selector">
               <span className="goal-picker-label">Choose topic:</span>
-              <div className="recap-topic-pills" role="tablist" aria-label="Choose quiz topic">
-                {QUIZ_CATEGORIES.map(cat => {
+              <div
+                className="recap-topic-pills"
+                role="tablist"
+                aria-label="Choose quiz topic"
+                onKeyDown={handleCategoryTabKeyDown}
+              >
+                {QUIZ_CATEGORIES.map((cat) => {
                   const isActive = activeCategory === cat.id;
                   const countInfo = curriculumStats[cat.id];
                   return (
@@ -1621,6 +1715,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                       type="button"
                       role="tab"
                       aria-selected={isActive}
+                      tabIndex={isActive ? 0 : -1}
                       className={`recap-topic-pill ${isActive ? 'active' : ''}`}
                       onClick={() => handleCategoryChange(cat.id)}
                       title={`Practice ${cat.label} (${countInfo?.total || 0} words)`}
@@ -1640,6 +1735,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                   <button
                     key={count}
                     type="button"
+                    aria-pressed={sessionGoal === count}
                     className={`recap-goal-btn ${sessionGoal === count ? 'active' : ''}`}
                     onClick={() => {
                       setSessionGoal(count);
@@ -1655,6 +1751,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
             <div className="quiz-buttons recap-quiz-buttons">
               <button 
+                type="button"
                 className="next-button start-new-quiz-button" 
                 onClick={() => startNewQuizSession(sessionGoal)}
                 autoFocus
@@ -1662,9 +1759,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                 aria-label={`Start Next Quiz (${sessionGoal} Qs)`}
               >
                 <span className="btn-main-label">
-                  <FaRedo className="btn-icon" /> Start Next Quiz ({sessionGoal} Qs)
+                  <FaRedo className="btn-icon" aria-hidden="true" /> Start Next Quiz ({sessionGoal} Qs)
                 </span>
-                <span className="btn-hint-badge">
+                <span className="btn-hint-badge" aria-hidden="true">
                   press <span className="btn-kbd">↵ Enter</span>
                 </span>
               </button>
@@ -1680,7 +1777,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     return (
       <div className="section quiz-section">
         <h2>Test Your Knowledge</h2>
-        <div className="quiz-card">
+        <div className="quiz-card" role="status" aria-live="polite">
           <h3>Loading quiz questions...</h3>
           <p>Please wait while we prepare your questions.</p>
         </div>
@@ -1690,16 +1787,21 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
   // --- RENDER ACTIVE QUIZ SESSION ---
   const progressPercent = sessionGoal > 0 ? Math.min(100, Math.round((sessionAnswered / sessionGoal) * 100)) : 0;
-  const questionsLeft = Math.max(0, sessionGoal - sessionAnswered);
+  const hasVisiblePrompt = Boolean(currentQuestion.dialogue || !currentQuestion.isAudioMode);
 
   return (
     <div className="section quiz-section">
       <h2 className="quiz-page-title">Test Your Knowledge</h2>
 
       {/* Topic Category Filter Bar */}
-      <div className="quiz-category-filter-bar" role="tablist" aria-label="Quiz topic filter">
-        <div className="category-filter-scroll">
-          {QUIZ_CATEGORIES.map(cat => {
+      <div className="quiz-category-filter-bar">
+        <div
+          className="category-filter-scroll"
+          role="tablist"
+          aria-label="Quiz topic filter"
+          onKeyDown={handleCategoryTabKeyDown}
+        >
+          {QUIZ_CATEGORIES.map((cat) => {
             const stats = curriculumStats[cat.id] || { total: 0, mastered: 0 };
             const isActive = activeCategory === cat.id;
             const isCategoryMastered = stats.total > 0 && stats.mastered >= stats.total;
@@ -1709,6 +1811,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
                 className={`category-filter-pill ${isActive ? 'active' : ''} ${isCategoryMastered ? 'mastered' : ''}`}
                 onClick={() => handleCategoryChange(cat.id)}
                 title={`Practice ${cat.label} (${stats.mastered}/${stats.total} mastered)`}
@@ -1726,7 +1829,14 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
       {/* Modern Compact Quiz Header Panel / Game HUD */}
       <div className="quiz-header-panel">
-        <div className="quiz-progress-bar-container" aria-label="Session progress bar">
+        <div
+          className="quiz-progress-bar-container"
+          role="progressbar"
+          aria-label="Session progress"
+          aria-valuenow={progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <div 
             className="quiz-progress-bar-fill" 
             style={{ width: `${progressPercent}%` }}
@@ -1749,6 +1859,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               <button
                 key={count}
                 type="button"
+                aria-pressed={sessionGoal === count}
                 className={`goal-pill ${sessionGoal === count ? 'active' : ''}`}
                 onClick={() => handleGoalChange(count)}
                 title={`Set quiz session to ${count} questions`}
@@ -1760,7 +1871,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         </div>
 
         <div className="curriculum-pool-badge" title="Mastered words are removed from future questions">
-          <span className="pool-icon">🏆</span>
+          <span className="pool-icon" aria-hidden="true">🏆</span>
           <span>Mastered: <strong>{activeMasteredCount}</strong> / {activeTotalWords}</span>
           <span className="pool-remaining-tag">({activeRemainingToMaster} remaining)</span>
         </div>
@@ -1770,35 +1881,37 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         {/* Category & Mode Badge */}
         {currentQuestion.badge && (
           <div className="quiz-mode-pill-container">
-            <span className="quiz-mode-pill">{currentQuestion.badge}</span>
+            <span className="quiz-mode-pill">{renderLeadingEmojiBadge(currentQuestion.badge)}</span>
           </div>
         )}
 
-        <h3 className="quiz-question-hint">{currentQuestion.hint}</h3>
+        <h3 id="quiz-question-hint" className="quiz-question-hint">{renderClozeText(currentQuestion.hint)}</h3>
 
         {/* Dialogue Cloze Card if Dialogue Mode */}
         {currentQuestion.dialogue ? (
           <div className="quiz-dialogue-card" role="region" aria-label="Conversation dialogue">
-            <div className="dialogue-bubble speaker-a">
-              <span className="dialogue-avatar" aria-hidden="true">A</span>
-              <div className="dialogue-content">
-                <span className="dialogue-text">"{currentQuestion.dialogue.speakerA}"</span>
+            <div id="quiz-question-prompt" className="quiz-dialogue-lines">
+              <div className="dialogue-bubble speaker-a">
+                <span className="dialogue-avatar" aria-hidden="true">A</span>
+                <div className="dialogue-content">
+                  <span className="dialogue-text">"{currentQuestion.dialogue.speakerA}"</span>
+                </div>
               </div>
-            </div>
-            <div className="dialogue-bubble speaker-b">
-              <span className="dialogue-avatar" aria-hidden="true">B</span>
-              <div className="dialogue-content">
-                <span className="dialogue-text">
-                  {currentQuestion.dialogue.speakerBPrefix}{' '}
-                  <strong className="dialogue-cloze-target">{currentQuestion.dialogue.clozeDisplay}</strong>
-                  {currentQuestion.dialogue.speakerBSuffix || ''}
-                </span>
+              <div className="dialogue-bubble speaker-b">
+                <span className="dialogue-avatar" aria-hidden="true">B</span>
+                <div className="dialogue-content">
+                  <span className="dialogue-text">
+                    {currentQuestion.dialogue.speakerBPrefix}{' '}
+                    <strong className="dialogue-cloze-target">{renderClozeText(currentQuestion.dialogue.clozeDisplay)}</strong>
+                    {currentQuestion.dialogue.speakerBSuffix || ''}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         ) : currentQuestion.isAudioMode ? null : (
           <div className="quiz-prompt">
-            <span className="quiz-prompt-text">{currentQuestion.prompt}</span>
+            <span id="quiz-question-prompt" className="quiz-prompt-text">{renderClozeText(currentQuestion.prompt)}</span>
             {currentQuestion.type !== 'alphabet' && currentQuestion.target && !currentQuestion.isAudioMode && (
               <PronunciationButton 
                 text={currentQuestion.target}
@@ -1818,7 +1931,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               onClick={() => playAudio(currentQuestion.audioText || currentQuestion.target, 0.92, getAudioCategory(currentQuestion.type))}
               aria-label="Play audio"
             >
-              <FaVolumeUp className={isPlayingAudio ? "pulse-animation" : ""} />
+              <FaVolumeUp className={isPlayingAudio ? "pulse-animation" : ""} aria-hidden="true" />
               <span>{isPlayingAudio ? "Speaking..." : "Play Audio"}</span>
             </button>
             <button
@@ -1834,8 +1947,12 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           </div>
         )}
         <div className="input-container">
+          <label htmlFor="quiz-answer-input" id="quiz-answer-sr-label" className="visually-hidden">
+            Your answer
+          </label>
           <input
             ref={inputRef}
+            id="quiz-answer-input"
             type="text"
             className="quiz-input"
             value={userAnswer}
@@ -1843,6 +1960,12 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             onChange={handleInputChange} 
             onKeyDown={handleKeyDown}
             placeholder="Your answer here..."
+            aria-label="Your answer"
+            aria-labelledby={
+              hasVisiblePrompt
+                ? 'quiz-answer-sr-label quiz-question-hint quiz-question-prompt'
+                : 'quiz-answer-sr-label quiz-question-hint'
+            }
             disabled={showNext}
             autoCorrect="off"
             autoCapitalize="none"
@@ -1852,9 +1975,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
         <div className="quiz-buttons">
           {!showNext && (
-            <button className="check-button" onClick={handleCheckAnswer} aria-label="Check Answer">
+            <button type="button" className="check-button" onClick={handleCheckAnswer} aria-label="Check Answer">
               <span className="btn-main-label">Check Answer</span>
-              <span className="btn-hint-badge">
+              <span className="btn-hint-badge" aria-hidden="true">
                 press <span className="btn-kbd">↵ Enter</span>
               </span>
             </button>
@@ -1862,103 +1985,107 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* Fluid Duolingo-style Bottom Feedback Sheet */}
-      {showNext && isCorrect !== null && (
-        <div 
-          className={`quiz-feedback-drawer ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`}
-          role="region"
-          aria-live="polite"
-        >
-          <div className="feedback-drawer-inner">
-            <div className="feedback-info-area">
-              <div className="feedback-header-row">
-                {isCorrect ? (
-                  <FaCheckCircle className="feedback-icon correct-icon" />
-                ) : (
-                  <FaTimesCircle className="feedback-icon incorrect-icon" />
-                )}
-                <div className="feedback-text-content">
-                  <span className="feedback-title">
-                    {isCorrect ? (isOverridden ? 'Correct! (Overridden)' : 'Correct!') : 'Not quite'}
-                  </span>
-                  {isCorrect && isOverridden && (
-                    <div className="feedback-overridden-note">
-                      Answer accepted as correct — score &amp; mastery updated!
-                    </div>
+      {/* Persistent polite live region + Fluid Duolingo-style Bottom Feedback Sheet */}
+      <div className="quiz-feedback-live-region" aria-live="polite" aria-atomic="true">
+        {showNext && isCorrect !== null && (
+          <div 
+            className={`quiz-feedback-drawer ${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}`}
+            role="region"
+            aria-label="Answer feedback"
+          >
+            <div className="feedback-drawer-inner">
+              <div className="feedback-info-area">
+                <div className="feedback-header-row">
+                  {isCorrect ? (
+                    <FaCheckCircle className="feedback-icon correct-icon" aria-hidden="true" />
+                  ) : (
+                    <FaTimesCircle className="feedback-icon incorrect-icon" aria-hidden="true" />
                   )}
-                  {!isCorrect && (
-                    <div className="feedback-answer-line">
-                      <span>The correct answer is: </span>
-                      <strong className="feedback-correct-word">
-                        {currentQuestion.answer.includes('/') 
-                          ? currentQuestion.answer.split('/')[0]
-                          : currentQuestion.answer}
-                      </strong>
-                    </div>
-                  )}
+                  <div className="feedback-text-content">
+                    <span className="feedback-title">
+                      {isCorrect ? (isOverridden ? 'Correct! (Overridden)' : 'Correct!') : 'Not quite'}
+                    </span>
+                    {isCorrect && isOverridden && (
+                      <div className="feedback-overridden-note">
+                        Answer accepted as correct — score &amp; mastery updated!
+                      </div>
+                    )}
+                    {!isCorrect && (
+                      <div className="feedback-answer-line">
+                        <span>The correct answer is: </span>
+                        <strong className="feedback-correct-word">
+                          {currentQuestion.answer.includes('/') 
+                            ? currentQuestion.answer.split('/')[0]
+                            : currentQuestion.answer}
+                        </strong>
+                      </div>
+                    )}
 
-                  {isCorrect && isWordJustMastered && (
-                    <div className="word-mastered-note">
-                      🏆 <strong>Word Mastered ({MASTERY_THRESHOLD}/{MASTERY_THRESHOLD})!</strong> Removed from upcoming questions.
-                    </div>
-                  )}
+                    {isCorrect && isWordJustMastered && (
+                      <div className="word-mastered-note">
+                        <span aria-hidden="true">🏆 </span><strong>Word Mastered ({MASTERY_THRESHOLD}/{MASTERY_THRESHOLD})!</strong> Removed from upcoming questions.
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Audio button in feedback sheet if available */}
+                {currentQuestion.target && (
+                  <div className="feedback-audio-action">
+                    <PronunciationButton 
+                      text={currentQuestion.target}
+                      className="feedback-pronounce-btn"
+                      audioCategory={getAudioCategory(currentQuestion.type)}
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Audio button in feedback sheet if available */}
-              {currentQuestion.target && (
-                <div className="feedback-audio-action">
-                  <PronunciationButton 
-                    text={currentQuestion.target}
-                    className="feedback-pronounce-btn"
-                    audioCategory={getAudioCategory(currentQuestion.type)}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="feedback-action-area">
-              {!isCorrect && (
-                <button
-                  type="button"
-                  className="feedback-override-button"
-                  onClick={handleOverrideAnswer}
-                  title="Mark my answer as correct (alternative valid translation or phrasing)"
-                >
-                  💡 I was right
-                </button>
-              )}
-              {sessionAnswered < sessionGoal ? (
-                <button 
-                  className={`feedback-continue-button ${isCorrect ? 'btn-next-correct' : 'btn-next-incorrect'}`} 
-                  onClick={handleNextQuestion} 
-                  autoFocus
-                  aria-label={`Next Question (${sessionIndex + 1}/${sessionGoal})`}
-                >
-                  <span className="btn-main-label">Next Question ({sessionIndex + 1}/{sessionGoal})</span>
-                  <span className="btn-hint-badge">
-                    press <span className="btn-kbd">↵ Enter</span>
-                  </span>
-                </button>
-              ) : (
-                <button 
-                  className="feedback-continue-button finish-quiz-button" 
-                  onClick={handleCompleteSession} 
-                  autoFocus
-                  aria-label="Complete Quiz & View Results"
-                >
-                  <span className="btn-main-label">
-                    <FaCheckCircle className="btn-icon" /> Complete Quiz & View Results 🎉
-                  </span>
-                  <span className="btn-hint-badge">
-                    press <span className="btn-kbd">↵ Enter</span>
-                  </span>
-                </button>
-              )}
+              <div className="feedback-action-area">
+                {!isCorrect && (
+                  <button
+                    type="button"
+                    className="feedback-override-button"
+                    onClick={handleOverrideAnswer}
+                    title="Mark my answer as correct (alternative valid translation or phrasing)"
+                  >
+                    <span aria-hidden="true">💡 </span>I was right
+                  </button>
+                )}
+                {sessionAnswered < sessionGoal ? (
+                  <button 
+                    type="button"
+                    className={`feedback-continue-button ${isCorrect ? 'btn-next-correct' : 'btn-next-incorrect'}`} 
+                    onClick={handleNextQuestion} 
+                    autoFocus
+                    aria-label={`Next Question (${sessionIndex + 1}/${sessionGoal})`}
+                  >
+                    <span className="btn-main-label">Next Question ({sessionIndex + 1}/{sessionGoal})</span>
+                    <span className="btn-hint-badge" aria-hidden="true">
+                      press <span className="btn-kbd">↵ Enter</span>
+                    </span>
+                  </button>
+                ) : (
+                  <button 
+                    type="button"
+                    className="feedback-continue-button finish-quiz-button" 
+                    onClick={handleCompleteSession} 
+                    autoFocus
+                    aria-label="Complete Quiz & View Results"
+                  >
+                    <span className="btn-main-label">
+                      <FaCheckCircle className="btn-icon" aria-hidden="true" /> Complete Quiz & View Results <span aria-hidden="true">🎉</span>
+                    </span>
+                    <span className="btn-hint-badge" aria-hidden="true">
+                      press <span className="btn-kbd">↵ Enter</span>
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

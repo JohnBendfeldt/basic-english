@@ -10,6 +10,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import englishData from './data/englishData';
 import { initVoices, cancelAllSpeech } from './utils/speech';
+import { scrollToTop } from './utils/useModalAccessibility';
 
 // Map URL paths to section IDs and SEO metadata
 const SECTION_META: Record<string, { title: string; description: string }> = {
@@ -98,7 +99,7 @@ const App: React.FC = () => {
       const section = getSectionFromPath();
       setActiveSection(section);
       updateMeta(section);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     };
     window.addEventListener('popstate', onPopState);
     // Set initial meta
@@ -183,16 +184,16 @@ const App: React.FC = () => {
     
     setActiveSection(section);
     closeMenu();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToTop();
   };
 
   const renderActiveSection = () => {
     if (!speechInitialized) {
       return (
-        <div className="section loading-section">
+        <div className="section loading-section" role="status" aria-live="polite">
           <h2>Loading Speech Functionality</h2>
           <p className="loading-message">Initializing voice capabilities. This may take a moment...</p>
-          <div className="loading-spinner"></div>
+          <div className="loading-spinner" aria-hidden="true"></div>
         </div>
       );
     }
@@ -240,68 +241,88 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(e) => {
+          const mainEl = document.getElementById('main-content');
+          if (mainEl) {
+            e.preventDefault();
+            mainEl.focus();
+          }
+        }}
+      >
+        Skip to main content
+      </a>
       <header>
         <div className="header-content">
-          <h1 onClick={() => handleSectionChange('alphabet')} style={{ cursor: 'pointer' }} title="Return to alphabet lessons">
-            <svg
-              className="app-emblem english-emblem english-flag"
-              viewBox="0 0 48 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-label="Basic English logo"
-              role="img"
+          <h1>
+            <button
+              type="button"
+              className="brand-home-button"
+              onClick={() => handleSectionChange('alphabet')}
+              title="Return to alphabet lessons"
             >
-              <defs>
-                <linearGradient id="enEmblemBg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#1e3a8a" />
-                  <stop offset="50%" stopColor="#0f172a" />
-                  <stop offset="100%" stopColor="#312e81" />
-                </linearGradient>
-                <linearGradient id="enGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#fef08a" />
-                  <stop offset="60%" stopColor="#f59e0b" />
-                  <stop offset="100%" stopColor="#b45309" />
-                </linearGradient>
-              </defs>
-              <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#enEmblemBg)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-              <g transform="translate(5, 5)">
+              <svg
+                className="app-emblem english-emblem english-flag"
+                viewBox="0 0 48 48"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+                focusable="false"
+              >
                 <defs>
-                  <clipPath id="enFlagClip">
-                    <rect x="0" y="0" width="13" height="9" rx="2" />
-                  </clipPath>
+                  <linearGradient id="enEmblemBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#1e3a8a" />
+                    <stop offset="50%" stopColor="#0f172a" />
+                    <stop offset="100%" stopColor="#312e81" />
+                  </linearGradient>
+                  <linearGradient id="enGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#fef08a" />
+                    <stop offset="60%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#b45309" />
+                  </linearGradient>
                 </defs>
-                <rect x="-0.5" y="-0.5" width="14" height="10" rx="2.5" fill="rgba(0, 0, 0, 0.45)" />
-                <rect x="0" y="0" width="13" height="9" rx="2" fill="#ffffff" />
-                <g clipPath="url(#enFlagClip)">
-                  <rect x="0" y="0" width="13" height="9" fill="#012169" />
-                  <line x1="0" y1="0" x2="13" y2="9" stroke="#ffffff" strokeWidth="2.2" />
-                  <line x1="13" y1="0" x2="0" y2="9" stroke="#ffffff" strokeWidth="2.2" />
-                  <line x1="0" y1="0" x2="13" y2="9" stroke="#c8102e" strokeWidth="1.1" />
-                  <line x1="13" y1="0" x2="0" y2="9" stroke="#c8102e" strokeWidth="1.1" />
-                  <rect x="4.8" y="0" width="3.4" height="9" fill="#ffffff" />
-                  <rect x="0" y="2.8" width="13" height="3.4" fill="#ffffff" />
-                  <rect x="5.5" y="0" width="2" height="9" fill="#c8102e" />
-                  <rect x="0" y="3.5" width="13" height="2" fill="#c8102e" />
+                <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#enEmblemBg)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+                <g transform="translate(5, 5)">
+                  <defs>
+                    <clipPath id="enFlagClip">
+                      <rect x="0" y="0" width="13" height="9" rx="2" />
+                    </clipPath>
+                  </defs>
+                  <rect x="-0.5" y="-0.5" width="14" height="10" rx="2.5" fill="rgba(0, 0, 0, 0.45)" />
+                  <rect x="0" y="0" width="13" height="9" rx="2" fill="#ffffff" />
+                  <g clipPath="url(#enFlagClip)">
+                    <rect x="0" y="0" width="13" height="9" fill="#012169" />
+                    <line x1="0" y1="0" x2="13" y2="9" stroke="#ffffff" strokeWidth="2.2" />
+                    <line x1="13" y1="0" x2="0" y2="9" stroke="#ffffff" strokeWidth="2.2" />
+                    <line x1="0" y1="0" x2="13" y2="9" stroke="#c8102e" strokeWidth="1.1" />
+                    <line x1="13" y1="0" x2="0" y2="9" stroke="#c8102e" strokeWidth="1.1" />
+                    <rect x="4.8" y="0" width="3.4" height="9" fill="#ffffff" />
+                    <rect x="0" y="2.8" width="13" height="3.4" fill="#ffffff" />
+                    <rect x="5.5" y="0" width="2" height="9" fill="#c8102e" />
+                    <rect x="0" y="3.5" width="13" height="2" fill="#c8102e" />
+                  </g>
+                  <rect x="0" y="0" width="13" height="9" rx="2" fill="none" stroke="#ffffff" strokeWidth="0.8" />
                 </g>
-                <rect x="0" y="0" width="13" height="9" rx="2" fill="none" stroke="#ffffff" strokeWidth="0.8" />
-              </g>
-              <g transform="translate(0, 3)">
-                <path d="M24 13L8 20.5L24 28L40 20.5L24 13Z" fill="url(#enGoldGrad)" />
-                <path
-                  d="M14 24.5V32C14 35.5 18 38 24 38C30 38 34 35.5 34 32V24.5"
-                  stroke="#ffffff"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                <path d="M40 21V30.5" stroke="url(#enGoldGrad)" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="40" cy="31.5" r="1.5" fill="url(#enGoldGrad)" />
-              </g>
-            </svg>
-            <span className="brand-title-group">
-              <span className="brand-title-main">Basic English</span>
-              <span className="brand-parent-tag">by Basic Language School</span>
-            </span>
+                <g transform="translate(0, 3)">
+                  <path d="M24 13L8 20.5L24 28L40 20.5L24 13Z" fill="url(#enGoldGrad)" />
+                  <path
+                    d="M14 24.5V32C14 35.5 18 38 24 38C30 38 34 35.5 34 32V24.5"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <path d="M40 21V30.5" stroke="url(#enGoldGrad)" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="40" cy="31.5" r="1.5" fill="url(#enGoldGrad)" />
+                </g>
+              </svg>
+              <span className="brand-title-group">
+                <span className="brand-title-main">Basic English</span>
+                <span className="brand-parent-tag">by Basic Language School</span>
+              </span>
+            </button>
           </h1>
           <div className="header-actions">
             <a
@@ -316,7 +337,7 @@ const App: React.FC = () => {
               <span className="hub-pill-text">15+ Languages</span>
             </a>
             {installPrompt && (
-              <button onClick={handleInstallClick} className="install-button">
+              <button type="button" onClick={handleInstallClick} className="install-button">
                 Install App
               </button>
             )}
@@ -331,7 +352,7 @@ const App: React.FC = () => {
         />
       </header>
       
-      <main tabIndex={-1}>
+      <main id="main-content" tabIndex={-1}>
         {renderActiveSection()}
       </main>
       

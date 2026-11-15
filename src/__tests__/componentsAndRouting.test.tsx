@@ -157,7 +157,7 @@ describe('App Routing, Navigation, Alphabet, AuthModal & UserMenu', () => {
     // Backdrop click closes modal; inner container click does not
     fireEvent.click(document.querySelector('.auth-modal-container')!);
     expect(onClose).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('dialog'));
+    fireEvent.click(document.querySelector('.auth-modal-backdrop')!);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

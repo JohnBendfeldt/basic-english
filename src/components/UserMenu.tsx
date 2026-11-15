@@ -16,6 +16,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [progressModalOpen, setProgressModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -58,6 +60,61 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Focus first menuitem when menu opens and handle Escape / Arrow keys
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const getMenuItems = (): HTMLElement[] =>
+      menuRef.current
+        ? Array.from(menuRef.current.querySelectorAll<HTMLElement>('[role="menuitem"]'))
+        : [];
+
+    const items = getMenuItems();
+    if (items.length > 0) {
+      items[0].focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setMenuOpen(false);
+        triggerRef.current?.focus();
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Home' || e.key === 'End') {
+        const menuItems = getMenuItems();
+        if (menuItems.length === 0) return;
+        e.preventDefault();
+        const currentIndex = menuItems.indexOf(document.activeElement as HTMLElement);
+        let nextIndex = 0;
+
+        if (e.key === 'ArrowDown') {
+          nextIndex = currentIndex >= 0 ? (currentIndex + 1) % menuItems.length : 0;
+        } else if (e.key === 'ArrowUp') {
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1;
+        } else if (e.key === 'Home') {
+          nextIndex = 0;
+        } else if (e.key === 'End') {
+          nextIndex = menuItems.length - 1;
+        }
+
+        menuItems[nextIndex]?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!menuOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      setMenuOpen(true);
+    }
+  };
+
   const handleSignOut = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
@@ -77,11 +134,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
         // Logged-in state: trigger and dropdown are siblings, preventing bubbling bugs
         <>
           <button 
+            ref={triggerRef}
             type="button"
             className="user-profile-trigger" 
             onClick={() => setMenuOpen((prev) => !prev)}
+            onKeyDown={handleTriggerKeyDown}
             aria-expanded={menuOpen}
-            aria-haspopup="true"
+            aria-haspopup="menu"
             aria-label={`User menu for ${displayName}`}
           >
             {avatarUrl ? (
@@ -93,8 +152,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
                 loading="lazy"
               />
             ) : (
-              <div className="user-avatar-placeholder">
-                <FaUser />
+              <div className="user-avatar-placeholder" aria-hidden="true">
+                <FaUser aria-hidden="true" />
               </div>
             )}
             <span className="user-display-name">{displayName}</span>
@@ -102,34 +161,37 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
 
           {menuOpen && (
             <div 
+              ref={menuRef}
               className="user-dropdown-menu" 
               role="menu"
+              aria-label="User account menu"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="user-dropdown-header">
+              <div className="user-dropdown-header" role="presentation">
                 <p className="dropdown-name">{displayName}</p>
                 <p className="dropdown-email">{currentUser.email}</p>
                 <span className="provider-badge">
                   {provider === 'azure' ? (
                     <>
-                      <FaMicrosoft /> Microsoft Entra ID
+                      <FaMicrosoft aria-hidden="true" /> Microsoft Entra ID
                     </>
                   ) : provider === 'github' ? (
                     <>
-                      <FaGithub /> GitHub
+                      <FaGithub aria-hidden="true" /> GitHub
                     </>
                   ) : (
                     <>
-                      <FaGoogle /> Google
+                      <FaGoogle aria-hidden="true" /> Google
                     </>
                   )}
                 </span>
               </div>
 
-              <div className="dropdown-divider"></div>
+              <div className="dropdown-divider" role="separator"></div>
 
               <button
                 type="button"
+                role="menuitem"
                 className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -137,7 +199,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
                   setProgressModalOpen(true);
                 }}
               >
-                <FaChartLine />
+                <FaChartLine aria-hidden="true" />
                 <span>My Progress & Stats</span>
               </button>
 
@@ -145,20 +207,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
                 href="https://basiclanguage.school"
                 target="_blank"
                 rel="noopener noreferrer"
+                role="menuitem"
                 className="dropdown-item"
                 onClick={() => setMenuOpen(false)}
               >
-                <FaGlobe />
+                <FaGlobe aria-hidden="true" />
                 <span>15+ Languages Hub</span>
               </a>
 
-
-
               {onNavigate && (
                 <>
-                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-divider" role="separator"></div>
                   <button
                     type="button"
+                    role="menuitem"
                     className="dropdown-item legal-dropdown-item"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -166,11 +228,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
                       onNavigate('privacy');
                     }}
                   >
-                    <FaShieldAlt />
+                    <FaShieldAlt aria-hidden="true" />
                     <span>Privacy Policy</span>
                   </button>
                   <button
                     type="button"
+                    role="menuitem"
                     className="dropdown-item legal-dropdown-item"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -178,16 +241,21 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
                       onNavigate('terms');
                     }}
                   >
-                    <FaFileContract />
+                    <FaFileContract aria-hidden="true" />
                     <span>Terms of Service</span>
                   </button>
                 </>
               )}
 
-              <div className="dropdown-divider"></div>
+              <div className="dropdown-divider" role="separator"></div>
 
-              <button type="button" className="dropdown-item signout-btn" onClick={handleSignOut}>
-                <FaSignOutAlt />
+              <button
+                type="button"
+                role="menuitem"
+                className="dropdown-item signout-btn"
+                onClick={handleSignOut}
+              >
+                <FaSignOutAlt aria-hidden="true" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -201,9 +269,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
             className="header-action-btn progress-btn"
             onClick={() => setProgressModalOpen(true)}
             title="View learning stats"
-            aria-label="View learning stats"
+            aria-label="My Stats — View learning progress"
           >
-            <FaChartLine />
+            <FaChartLine aria-hidden="true" />
             <span className="btn-text">My Stats</span>
           </button>
 
@@ -214,7 +282,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ onNavigate, initialUser = nu
             title="Sign in to sync progress"
             aria-label="Sign in to sync progress"
           >
-            <FaSignInAlt />
+            <FaSignInAlt aria-hidden="true" />
             <span className="btn-text">Sign In</span>
           </button>
         </div>

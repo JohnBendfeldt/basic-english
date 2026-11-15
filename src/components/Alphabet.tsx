@@ -47,7 +47,7 @@ const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
                   </div>
                 </div>
                 
-                <div className="letter-underline"></div>
+                <div className="letter-underline" aria-hidden="true"></div>
               </div>
               
               <div className="pronunciation">
@@ -64,7 +64,7 @@ const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
                       aria-label={`Pronounce ${exampleWord}`}
                       onClick={() => handleBadgeSpeak(exampleWord)}
                     >
-                      {item.icon}
+                      <span aria-hidden="true">{item.icon}</span>
                     </button>
                   )}
                   <div className="example-details">
