@@ -192,7 +192,11 @@ describe('App Routing, Navigation, Alphabet, AuthModal & UserMenu', () => {
 
     fireEvent.click(trigger);
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    expect(screen.getByText(/GitHub/)).toBeInTheDocument();
+    expect(document.querySelector('.provider-badge')).toHaveTextContent(/GitHub/);
+    expect(screen.getByRole('menuitem', { name: /GitHub Repository/i })).toHaveAttribute(
+      'href',
+      'https://github.com/JohnBendfeldt/basic-english'
+    );
 
     // Legal navigation items inside dropdown
     fireEvent.click(screen.getByText('Privacy Policy'));

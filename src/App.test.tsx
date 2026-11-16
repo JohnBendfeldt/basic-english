@@ -64,4 +64,23 @@ describe('App', () => {
       expect(screen.getByRole('heading', { name: /english alphabet/i, level: 2 })).toBeInTheDocument();
     });
   });
+
+  test('renders GitHub repository links in footer and Terms of Service', async () => {
+    render(<App />);
+    const footerGithubLink = screen.getByRole('link', { name: /^GitHub$/i });
+    expect(footerGithubLink).toHaveAttribute('href', 'https://github.com/JohnBendfeldt/basic-english');
+    expect(footerGithubLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    fireEvent.click(screen.getByRole('link', { name: /terms of service/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Terms of Service', level: 1 })).toBeInTheDocument();
+    });
+
+    const mitLink = screen.getByRole('link', { name: /MIT License/i });
+    expect(mitLink).toHaveAttribute('href', 'https://github.com/JohnBendfeldt/basic-english/blob/main/LICENSE');
+    expect(screen.getByRole('link', { name: 'github.com/JohnBendfeldt/basic-english' })).toHaveAttribute(
+      'href',
+      'https://github.com/JohnBendfeldt/basic-english'
+    );
+  });
 });
