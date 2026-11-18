@@ -86,7 +86,7 @@
   status = 200
 
 # ==============================================================================
-# Global Security Headers (OWASP Recommended)
+# Global Security Headers (OWASP Recommended) & Default Document Cache Prevention
 # ==============================================================================
 [[headers]]
   for = "/*"
@@ -99,6 +99,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Content-Security-Policy = "default-src 'self'; script-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.basiclanguage.school wss://auth.basiclanguage.school https://login.microsoftonline.com https://accounts.google.com https://github.com; frame-src 'self' https://accounts.google.com https://login.microsoftonline.com https://github.com; upgrade-insecure-requests;"
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 # Sitemap must be served as XML
 [[headers]]

@@ -78,6 +78,8 @@ describe('Security Headers, CSP, HTML Script-Injection & PostgreSQL RLS Regressi
     expect(manifest.name).toBeTruthy();
     expect(['.', '/']).toContain(manifest.start_url);
     expect(netlifyToml).toContain('for = "/*.html"');
+    const globalHeadersBlock = netlifyToml.split('for = "/sitemap.xml"')[0];
+    expect(globalHeadersBlock).toContain('Cache-Control = "no-cache, no-store, must-revalidate"');
   });
 
   describe('Input Hardening, Prototype Guards & Service Worker No-Reload Regression', () => {
