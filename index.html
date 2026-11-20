@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#4F46E5" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
     <!-- Anti-caching for HTML document: ensures browsers always check network for latest bundles -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -13,19 +15,30 @@
 
     <!-- Primary SEO -->
     <title>Basic English | Free Online English for Beginners</title>
-    <meta name="description" content="Learn basic English online for free. Study the English alphabet & phonics, essential phrases, common words, and numbers with interactive exercises and audio pronunciation. Perfect for beginners." />
-    <meta name="keywords" content="basic english, learn english online, free english, english for beginners, english alphabet, phonics, basic english online, free basic english, english phrases, english vocabulary, english numbers, free english lessons" />
-    <link rel="canonical" href="https://basicenglish.school" />
+    <meta name="description" content="Learn basic English online for free. Study the English alphabet &amp; phonics, essential phrases, common words, and numbers with studio neural audio and interactive quizzes. Perfect for ESL beginners." />
+    <meta name="keywords" content="basic english, learn english online, free english, esl for beginners, english alphabet, phonics, basic english online, free basic english, english phrases, english vocabulary, english numbers, free english lessons" />
+    <link rel="canonical" href="https://basicenglish.school/" />
 
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://basicenglish.school" />
+    <meta property="og:url" content="https://basicenglish.school/" />
     <meta property="og:site_name" content="Basic English" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Basic English | Free Online English for Beginners" />
-    <meta property="og:description" content="Learn basic English online for free. Study the English alphabet & phonics, essential phrases, common words, and numbers with interactive exercises and audio pronunciation. Perfect for beginners." />
+    <meta property="og:description" content="Learn basic English online for free. Study the English alphabet &amp; phonics, essential phrases, common words, and numbers with studio neural audio and interactive quizzes." />
     <meta property="og:image" content="https://basicenglish.school/og-image.png" />
+    <meta property="og:image:secure_url" content="https://basicenglish.school/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Basic English interactive phonics, vocabulary, and quiz app preview" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Basic English | Free Online English for Beginners" />
+    <meta name="twitter:description" content="Learn basic English online for free. Study the English alphabet &amp; phonics, essential phrases, common words, and numbers with studio neural audio and interactive quizzes." />
+    <meta name="twitter:image" content="https://basicenglish.school/og-image.png" />
+    <meta name="twitter:image:alt" content="Basic English interactive phonics, vocabulary, and quiz app preview" />
 
     <!-- PWA -->
     <link rel="apple-touch-icon" href="/logo192.png" />
@@ -34,41 +47,100 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Basic English" />
-    <link rel="apple-touch-startup-image" href="/splash-screen.png" />
 
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Basic English",
-      "alternateName": "Basic English School & Academy",
-      "url": "https://basicenglish.school",
-      "description": "Learn basic English online for free. Study the English alphabet & phonics, essential phrases, common words, and numbers with interactive exercises and audio pronunciation. Perfect for beginners.",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Any",
-      "browserRequirements": "Requires JavaScript",
-      "inLanguage": "en",
-      "isAccessibleForFree": true,
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "educationalLevel": "Beginner",
-      "teaches": "English language",
-      "audience": {
-        "@type": "EducationalAudience",
-        "educationalRole": "student",
-        "audienceType": "English language beginners"
-      },
-      "featureList": [
-        "English Alphabet & Phonics with pronunciation",
-        "Basic English Phrases with audio",
-        "English Numbers",
-        "Common English Words and vocabulary",
-        "Interactive Quiz",
-        "Web Speech audio pronunciation guides"
+      "@graph": [
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://basiclanguage.school/#organization",
+          "name": "Basic Language School",
+          "url": "https://basiclanguage.school/",
+          "logo": "https://basiclanguage.school/logo512.png",
+          "sameAs": [
+            "https://basicenglish.school/",
+            "https://basicfrench.org/",
+            "https://basicrussian.org/",
+            "https://github.com/JohnBendfeldt/basic-english",
+            "https://github.com/JohnBendfeldt/basic-language-school"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://basicenglish.school/#website",
+          "name": "Basic English",
+          "alternateName": "Basic English School",
+          "url": "https://basicenglish.school/",
+          "description": "Free interactive ESL phonics, phrases, numbers, vocabulary, and quiz web app for English beginners.",
+          "inLanguage": "en",
+          "publisher": {
+            "@id": "https://basiclanguage.school/#organization"
+          }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://basicenglish.school/#app",
+          "name": "Basic English",
+          "alternateName": "Basic English School & Academy",
+          "url": "https://basicenglish.school/",
+          "image": "https://basicenglish.school/og-image.png",
+          "description": "Learn basic English online for free. Study the English alphabet & phonics, essential phrases, common words, and numbers with studio neural audio pronunciation and interactive quizzes. Perfect for beginners.",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Any",
+          "browserRequirements": "Requires JavaScript",
+          "inLanguage": "en",
+          "isAccessibleForFree": true,
+          "provider": {
+            "@id": "https://basiclanguage.school/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "educationalLevel": "Beginner",
+          "teaches": "English language",
+          "audience": {
+            "@type": "EducationalAudience",
+            "educationalRole": "student",
+            "audienceType": "English language and ESL beginners"
+          },
+          "featureList": [
+            "English Alphabet & Phonics with studio neural TTS pronunciation",
+            "Basic English Phrases with audio",
+            "English Numbers & Time expressions",
+            "Common English Words and high-frequency vocabulary",
+            "Adaptive typo-tolerant Quiz with spaced-repetition mastery",
+            "Offline Progressive Web App support"
+          ]
+        },
+        {
+          "@type": "Course",
+          "@id": "https://basicenglish.school/#course",
+          "name": "Free Online Basic English Course for Beginners",
+          "description": "Self-paced interactive ESL beginner course covering the 26-letter English alphabet and phonics, essential phrases, numbers, everyday vocabulary, and adaptive quizzes with studio neural audio.",
+          "url": "https://basicenglish.school/",
+          "inLanguage": "en",
+          "educationalLevel": "Beginner",
+          "teaches": "English phonics, pronunciation, everyday phrases, numbers, and core vocabulary",
+          "isAccessibleForFree": true,
+          "provider": {
+            "@id": "https://basiclanguage.school/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "category": "Free",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "hasCourseInstance": {
+            "@type": "CourseInstance",
+            "courseMode": "online",
+            "courseWorkload": "PT2H"
+          }
+        }
       ]
     }
     </script>
@@ -78,16 +150,19 @@
       <h1>Basic English – Free Online English for Beginners</h1>
       <p>
         Learn basic English online for free at basicenglish.school. Study the English alphabet,
-        phonics, essential phrases, common words, numbers, and pronunciation with interactive
-        exercises. Free English lessons for beginners. Please enable JavaScript to use the full app.
+        phonics, essential phrases, common words, numbers, and studio neural pronunciation with interactive
+        exercises. Free English lessons for ESL beginners. Please enable JavaScript to use the full app.
       </p>
-      <nav>
+      <nav aria-label="Lessons and resources">
         <ul>
-          <li><a href="/alphabet">English Alphabet – Learn all 26 letters with phonics and pronunciation</a></li>
-          <li><a href="/phrases">Basic English Phrases – Essential greetings and expressions</a></li>
-          <li><a href="/numbers">English Numbers – Learn to count in English</a></li>
-          <li><a href="/words">Common English Words – Build your vocabulary</a></li>
-          <li><a href="/quiz">English Quiz – Test your knowledge</a></li>
+          <li><a href="/alphabet">English Alphabet &amp; Phonics – Learn all 26 letters with phonics and pronunciation</a></li>
+          <li><a href="/phrases">Basic English Phrases – Essential greetings and everyday expressions</a></li>
+          <li><a href="/numbers">English Numbers &amp; Time – Learn to count and tell time in English</a></li>
+          <li><a href="/words">Common English Words – Build your everyday English vocabulary</a></li>
+          <li><a href="/quiz">English Quiz – Test your knowledge with adaptive spaced repetition</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="https://basiclanguage.school/">Basic Language School – Learn 15 World Languages Free</a></li>
         </ul>
       </nav>
     </noscript>
