@@ -504,6 +504,7 @@ export class ProgressService {
             wordId: w.word_id,
             prompt: w.prompt,
             answer: w.answer,
+            target: w.target,
             timesCorrect: w.times_correct,
             timesIncorrect: w.times_incorrect,
             lastTestedAt: w.last_tested_at,
