@@ -41,6 +41,7 @@ const Alphabet: React.FC<AlphabetProps> = ({ data }) => {
                   <div className="pronunciation-button-wrapper">
                     <PronunciationButton 
                       text={item.letter.toLowerCase()} 
+                      label={`Pronounce letter ${item.letter}`}
                       audioCategory="alphabet"
                       useLocalAudio={true}
                     />

@@ -43,7 +43,7 @@ const PhraseCard: React.FC<PhraseCardProps> = ({
         </div>
         <PronunciationButton 
           text={targetPhrase} 
-          label={`Pronounce ${contentType === 'words' ? 'word' : contentType === 'numbers' ? 'number' : 'phrase'} ${targetPhrase}`}
+          label={`Pronounce ${contentType === 'words' ? 'word' : contentType === 'numbers' ? (/\?|\bo'clock\b|\bpast\b|\bto\b/i.test(targetPhrase) ? 'phrase' : 'number') : 'phrase'} ${targetPhrase}`}
           className="phrase-pronunciation"
           audioCategory={contentType}
           useLocalAudio={true}

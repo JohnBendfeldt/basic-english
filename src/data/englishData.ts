@@ -9,7 +9,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'A',
     pronunciation: '/eɪ/ & /æ/',
-    example: 'as in Apple, Ant',
+    example: 'as in Apple, Acorn',
     word: 'Apple',
     meaning: 'Noun: A sweet round fruit',
     icon: '🍎'
@@ -25,7 +25,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'C',
     pronunciation: '/siː/ & /k/',
-    example: 'as in Cat, Car',
+    example: 'as in Cat, City',
     word: 'Cat',
     meaning: 'Noun: A small furry pet',
     icon: '🐱'
@@ -41,7 +41,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'E',
     pronunciation: '/iː/ & /ɛ/',
-    example: 'as in Egg, Elephant',
+    example: 'as in Eat, Egg',
     word: 'Egg',
     meaning: 'Noun: Breakfast food from birds',
     icon: '🥚'
@@ -57,7 +57,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'G',
     pronunciation: '/dʒiː/ & /ɡ/',
-    example: 'as in Good, Girl',
+    example: 'as in Good, Giraffe',
     word: 'Good',
     meaning: 'Adjective: Positive, fine, nice',
     icon: '👍'
@@ -73,7 +73,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'I',
     pronunciation: '/aɪ/ & /ɪ/',
-    example: 'as in Ice, Island',
+    example: 'as in Ice, Igloo',
     word: 'Ice',
     meaning: 'Noun: Frozen solid water',
     icon: '🧊'
@@ -121,7 +121,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'O',
     pronunciation: '/oʊ/ & /ɒ/',
-    example: 'as in Open, Orange',
+    example: 'as in Open, Octopus',
     word: 'Orange',
     meaning: 'Noun: Round citrus fruit and color',
     icon: '🍊'
@@ -129,15 +129,15 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'P',
     pronunciation: '/piː/',
-    example: 'as in Please, Phone',
+    example: 'as in Please, Pen',
     word: 'Phone',
-    meaning: 'Noun: Mobile device for calling',
+    meaning: 'Noun: Mobile device ("ph" sounds like /f/)',
     icon: '📱'
   },
   {
     letter: 'Q',
     pronunciation: '/kjuː/',
-    example: 'as in Question, Quick',
+    example: 'as in Quiet, Question',
     word: 'Quiet',
     meaning: 'Adjective: Making very little sound',
     icon: '🤫'
@@ -147,7 +147,7 @@ const alphabet: AlphabetItem[] = [
     pronunciation: '/ɑːr/',
     example: 'as in Rain, Road',
     word: 'Road',
-    meaning: 'Noun: Street for cars to drive',
+    meaning: 'Noun: Street or path for cars to drive on',
     icon: '🛣️'
   },
   {
@@ -169,7 +169,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'U',
     pronunciation: '/juː/ & /ʌ/',
-    example: 'as in Umbrella, Up',
+    example: 'as in Uniform, Umbrella',
     word: 'Umbrella',
     meaning: 'Noun: Shield used against rain',
     icon: '☂️'
@@ -193,7 +193,7 @@ const alphabet: AlphabetItem[] = [
   {
     letter: 'X',
     pronunciation: '/ɛks/',
-    example: 'as in Box, X-ray',
+    example: 'as in X-ray, Box',
     word: 'X-ray',
     meaning: 'Noun: Medical picture of bones',
     icon: '🩻'
@@ -296,7 +296,7 @@ const basicPhrases: PhraseItem[] = [
   {
     phrase: 'You are welcome',
     meaning: 'Standard polite reply to thank you',
-    pronunciation: '/jʊər ˈwɛlkəm/ (yor WEL-kum)',
+    pronunciation: '/juː ɑːr ˈwɛlkəm/ (yoo ar WEL-kum)',
     icon: '🤗'
   },
   {
@@ -339,7 +339,7 @@ const basicPhrases: PhraseItem[] = [
   },
   {
     phrase: 'How do I get to the airport?',
-    meaning: 'Asking for directions to airport',
+    meaning: 'Asking for directions to the airport',
     pronunciation: '/haʊ duː aɪ ɡɛt tuː ði ˈɛərpɔːrt/ (how doo eye get to the AIR-port)',
     icon: '✈️'
   },
@@ -359,7 +359,7 @@ const basicPhrases: PhraseItem[] = [
   },
   {
     phrase: 'I would like a coffee, please',
-    meaning: 'Ordering a beverage politely at a cafe',
+    meaning: 'Ordering a beverage politely at a café',
     pronunciation: '/aɪ wʊd laɪk ə ˈkɒfi pliːz/ (eye wood lyk a KAW-fee pleez)',
     icon: '☕'
   },
@@ -450,42 +450,42 @@ const numbers: PhraseItem[] = [
 // High-frequency core vocabulary (Oxford 3000 beginner selection)
 const commonWords: PhraseItem[] = [
   // Food & Drink
-  { phrase: 'Water', meaning: 'Noun: Essential drink for life', pronunciation: '/ˈwɔːtər/ (WAH-ter)', icon: '💧' },
-  { phrase: 'Bread', meaning: 'Noun: Baked staple food', pronunciation: '/brɛd/ (bred)', icon: '🍞' },
-  { phrase: 'Coffee', meaning: 'Noun: Popular brewed morning beverage', pronunciation: '/ˈkɒfi/ (KAW-fee)', icon: '☕' },
-  { phrase: 'Tea', meaning: 'Noun: Hot or iced herbal/leaf infusion', pronunciation: '/tiː/ (tee)', icon: '🍵' },
-  { phrase: 'Food', meaning: 'Noun: Nourishment to eat', pronunciation: '/fuːd/ (food)', icon: '🍲' },
-  { phrase: 'Breakfast', meaning: 'Noun: First meal of the day', pronunciation: '/ˈbrɛkfəst/ (BREK-fust)', icon: '🍳' },
-  { phrase: 'Lunch', meaning: 'Noun: Midday meal', pronunciation: '/lʌntʃ/ (lunch)', icon: '🥪' },
-  { phrase: 'Dinner', meaning: 'Noun: Evening meal', pronunciation: '/ˈdɪnər/ (DIN-er)', icon: '🍽️' },
-  { phrase: 'Restaurant', meaning: 'Noun: Place to buy and eat meals', pronunciation: '/ˈrɛstərɒnt/ (RES-tuh-rahnt)', icon: '🍴' },
+  { phrase: 'Water', meaning: 'Essential drink for life', pronunciation: '/ˈwɔːtər/ (WAH-ter)', icon: '💧' },
+  { phrase: 'Bread', meaning: 'Baked staple food', pronunciation: '/brɛd/ (bred)', icon: '🍞' },
+  { phrase: 'Coffee', meaning: 'Popular brewed morning beverage', pronunciation: '/ˈkɒfi/ (KAW-fee)', icon: '☕' },
+  { phrase: 'Tea', meaning: 'Hot or iced herbal/leaf infusion', pronunciation: '/tiː/ (tee)', icon: '🍵' },
+  { phrase: 'Food', meaning: 'Nourishment to eat', pronunciation: '/fuːd/ (food)', icon: '🍲' },
+  { phrase: 'Breakfast', meaning: 'First meal of the day', pronunciation: '/ˈbrɛkfəst/ (BREK-fust)', icon: '🍳' },
+  { phrase: 'Lunch', meaning: 'Midday meal', pronunciation: '/lʌntʃ/ (lunch)', icon: '🥪' },
+  { phrase: 'Dinner', meaning: 'Evening meal', pronunciation: '/ˈdɪnər/ (DIN-er)', icon: '🍽️' },
+  { phrase: 'Restaurant', meaning: 'Place to buy and eat meals', pronunciation: '/ˈrɛstərɒnt/ (RES-tuh-rahnt)', icon: '🍴' },
 
   // Places & Travel
-  { phrase: 'Airport', meaning: 'Noun: Hub for airplanes and flights', pronunciation: '/ˈɛərpɔːrt/ (AIR-port)', icon: '✈️' },
-  { phrase: 'Hotel', meaning: 'Noun: Place with rooms for travelers', pronunciation: '/hoʊˈtɛl/ (hoh-TEL)', icon: '🏨' },
-  { phrase: 'Station', meaning: 'Noun: Stop for trains, metro, or buses', pronunciation: '/ˈsteɪʃən/ (STAY-shun)', icon: '🚉' },
-  { phrase: 'Hospital', meaning: 'Noun: Medical center for illness/injury', pronunciation: '/ˈhɒspɪtəl/ (HAHS-pi-tul)', icon: '🏥' },
-  { phrase: 'Pharmacy', meaning: 'Noun: Store for medicine and prescriptions', pronunciation: '/ˈfɑːrməsi/ (FAR-muh-see)', icon: '💊' },
-  { phrase: 'Supermarket', meaning: 'Noun: Large grocery store', pronunciation: '/ˈsuːpərˌmɑːrkɪt/ (SOO-per-mar-kit)', icon: '🛒' },
-  { phrase: 'Bank', meaning: 'Noun: Financial institution for money', pronunciation: '/bæŋk/ (bank)', icon: '🏦' },
-  { phrase: 'City', meaning: 'Noun: Large populated urban area', pronunciation: '/ˈsɪti/ (SIT-ee)', icon: '🏙️' },
+  { phrase: 'Airport', meaning: 'Hub for airplanes and flights', pronunciation: '/ˈɛərpɔːrt/ (AIR-port)', icon: '✈️' },
+  { phrase: 'Hotel', meaning: 'Place with rooms for travelers', pronunciation: '/hoʊˈtɛl/ (hoh-TEL)', icon: '🏨' },
+  { phrase: 'Station', meaning: 'Stop for trains, metro, or buses', pronunciation: '/ˈsteɪʃən/ (STAY-shun)', icon: '🚉' },
+  { phrase: 'Hospital', meaning: 'Medical center for illness/injury', pronunciation: '/ˈhɒspɪtəl/ (HAHS-pi-tul)', icon: '🏥' },
+  { phrase: 'Pharmacy', meaning: 'Store for medicine and prescriptions', pronunciation: '/ˈfɑːrməsi/ (FAR-muh-see)', icon: '💊' },
+  { phrase: 'Supermarket', meaning: 'Large grocery store', pronunciation: '/ˈsuːpərˌmɑːrkɪt/ (SOO-per-mar-kit)', icon: '🛒' },
+  { phrase: 'Bank', meaning: 'Financial institution for money', pronunciation: '/bæŋk/ (bank)', icon: '🏦' },
+  { phrase: 'City', meaning: 'Large populated urban area', pronunciation: '/ˈsɪti/ (SIT-ee)', icon: '🏙️' },
 
   // People & Family
-  { phrase: 'Family', meaning: 'Noun: Parents, children, and relatives', pronunciation: '/ˈfæməli/ (FAM-uh-lee)', icon: '👨‍👩‍👧' },
-  { phrase: 'Friend', meaning: 'Noun: A close companion you care about', pronunciation: '/frɛnd/ (frend)', icon: '🤝' },
-  { phrase: 'Mother', meaning: 'Noun: Female parent', pronunciation: '/ˈmʌðər/ (MUH-ther)', icon: '👩' },
-  { phrase: 'Father', meaning: 'Noun: Male parent', pronunciation: '/ˈfɑːðər/ (FAH-ther)', icon: '👨' },
-  { phrase: 'Child', meaning: 'Noun: Young person (plural: children)', pronunciation: '/tʃaɪld/ (chyld)', icon: '🧒' },
-  { phrase: 'Teacher', meaning: 'Noun: Instructor at school', pronunciation: '/ˈtiːtʃər/ (TEE-cher)', icon: '🧑‍🏫' },
-  { phrase: 'Student', meaning: 'Noun: A learner taking classes', pronunciation: '/ˈstjuːdənt/ (STOO-dent)', icon: '🎒' },
+  { phrase: 'Family', meaning: 'Parents, children, and relatives', pronunciation: '/ˈfæməli/ (FAM-uh-lee)', icon: '👨‍👩‍👧' },
+  { phrase: 'Friend', meaning: 'A close companion you care about', pronunciation: '/frɛnd/ (frend)', icon: '🤝' },
+  { phrase: 'Mother', meaning: 'Female parent', pronunciation: '/ˈmʌðər/ (MUH-ther)', icon: '👩' },
+  { phrase: 'Father', meaning: 'Male parent', pronunciation: '/ˈfɑːðər/ (FAH-ther)', icon: '👨' },
+  { phrase: 'Child', meaning: 'Young person (plural: children)', pronunciation: '/tʃaɪld/ (chyld)', icon: '🧒' },
+  { phrase: 'Teacher', meaning: 'Instructor at school', pronunciation: '/ˈtiːtʃər/ (TEE-cher)', icon: '🧑‍🏫' },
+  { phrase: 'Student', meaning: 'A learner taking classes', pronunciation: '/ˈstuːdənt/ (STOO-dent)', icon: '🎒' },
 
   // Objects & Everyday Essentials
-  { phrase: 'Money', meaning: 'Noun: Currency used to purchase goods', pronunciation: '/ˈmʌni/ (MUN-ee)', icon: '💵' },
-  { phrase: 'Ticket', meaning: 'Noun: Pass for transit, cinema, or events', pronunciation: '/ˈtɪkɪt/ (TIK-it)', icon: '🎟️' },
-  { phrase: 'Passport', meaning: 'Noun: Official travel identification document', pronunciation: '/ˈpæspɔːrt/ (PASS-port)', icon: '🛂' },
-  { phrase: 'Phone', meaning: 'Noun: Mobile smartphone', pronunciation: '/foʊn/ (fohn)', icon: '📱' },
-  { phrase: 'Computer', meaning: 'Noun: Electronic machine for work/browsing', pronunciation: '/kəmˈpjuːtər/ (kum-PYOO-ter)', icon: '💻' },
-  { phrase: 'Book', meaning: 'Noun: Printed literature or study material', pronunciation: '/bʊk/ (book)', icon: '📖' },
+  { phrase: 'Money', meaning: 'Currency used to purchase goods', pronunciation: '/ˈmʌni/ (MUN-ee)', icon: '💵' },
+  { phrase: 'Ticket', meaning: 'Pass for transit, cinema, or events', pronunciation: '/ˈtɪkɪt/ (TIK-it)', icon: '🎟️' },
+  { phrase: 'Passport', meaning: 'Official travel identification document', pronunciation: '/ˈpæspɔːrt/ (PASS-port)', icon: '🛂' },
+  { phrase: 'Phone', meaning: 'Mobile smartphone', pronunciation: '/foʊn/ (fohn)', icon: '📱' },
+  { phrase: 'Computer', meaning: 'Electronic machine for work/browsing', pronunciation: '/kəmˈpjuːtər/ (kum-PYOO-ter)', icon: '💻' },
+  { phrase: 'Book', meaning: 'Printed literature or study material', pronunciation: '/bʊk/ (book)', icon: '📖' },
 
   // Core Verbs / Actions
   { phrase: 'To learn', meaning: 'Verb: Gain knowledge or skill', pronunciation: '/tuː lɜːrn/ (to lern)', icon: '🧠' },

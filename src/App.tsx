@@ -237,6 +237,8 @@ const App: React.FC = () => {
             character: item.letter,
             pronunciation: item.pronunciation,
             example: item.example,
+            word: item.word,
+            meaning: item.meaning,
           })),
           basicPhrases: englishData.basicPhrases,
           numbers: englishData.numbers,

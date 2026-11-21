@@ -160,8 +160,8 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
   },
   'goodbye': {
     speakerA: 'It was great talking to you. See you tomorrow!',
-    speakerBPrefix: 'Good',
-    missingWord: 'bye',
+    speakerBPrefix: '',
+    missingWord: 'Goodbye',
     speakerBSuffix: ', take care!',
     contextHint: 'Farewell'
   },
@@ -197,7 +197,7 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
     speakerA: '(Someone is standing directly in front of the door)',
     speakerBPrefix: 'Excuse',
     missingWord: 'me',
-    speakerBSuffix: ', may I pass please?',
+    speakerBSuffix: ', may I pass, please?',
     contextHint: 'Getting attention politely or passing by'
   },
   'i am sorry': {
@@ -222,7 +222,7 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
     contextHint: 'Negative response'
   },
   'where is the restroom': {
-    speakerA: '(At a restaurant or cafe after lunch)',
+    speakerA: '(At a restaurant or café after lunch)',
     speakerBPrefix: 'Excuse me, where is the',
     missingWord: 'restroom',
     speakerBSuffix: '?',
@@ -240,7 +240,7 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
     speakerBPrefix: 'How do I get to the',
     missingWord: 'airport',
     speakerBSuffix: '?',
-    contextHint: 'Asking directions to airport'
+    contextHint: 'Asking for directions to the airport'
   },
   'is it far from here': {
     speakerA: 'The city art museum is over on 8th Street.',
@@ -257,11 +257,11 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
     contextHint: 'Asking for the restaurant bill'
   },
   'i would like a coffee please': {
-    speakerA: 'Barista: Welcome to the cafe! What can I make for you?',
+    speakerA: 'Barista: Welcome to the café! What can I make for you?',
     speakerBPrefix: 'I would like a',
     missingWord: 'coffee',
     speakerBSuffix: ', please.',
-    contextHint: 'Ordering a beverage at a cafe'
+    contextHint: 'Ordering a beverage at a café'
   },
   'a bottle of water please': {
     speakerA: 'Flight attendant: Would you like a beverage?',
@@ -280,7 +280,7 @@ const CONVERSATIONAL_DIALOGUES: Record<string, {
   'do you speak english': {
     speakerA: 'Traveler arriving at a train station in Europe.',
     speakerBPrefix: 'Pardon me, do you speak',
-    missingWord: 'english',
+    missingWord: 'English',
     speakerBSuffix: '?',
     contextHint: 'Asking if someone speaks English'
   },
@@ -437,6 +437,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       mainText = outsideParentheses;
     }
     let normalized = mainText.toLowerCase()
+      .replace(/[\u2018\u2019]/g, "'")
       .replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -444,7 +445,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
   };
 
   const normalizeEnglishPhrase = (text: string): string => {
-    let s = text.toLowerCase().trim();
+    let s = text.toLowerCase().replace(/[\u2018\u2019]/g, "'").trim();
 
     // Remove text inside parentheses first (e.g. 'Hello (formal)' -> 'Hello')
     s = s.replace(/\s*\([^)]*\)\s*/g, ' ');
@@ -460,6 +461,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       [/\b(there's|theres)\b/gi, 'there is'],
       [/\b(here's|heres)\b/gi, 'here is'],
       [/\b(i'm|im)\b/gi, 'i am'],
+      [/\b(i'd|id)\b/gi, 'i would'],
       [/\b(you're|youre)\b/gi, 'you are'],
       [/\b(we're|were)\b/gi, 'we are'],
       [/\b(they're|theyre)\b/gi, 'they are'],
@@ -467,6 +469,11 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       [/\b(doesn't|doesnt)\b/gi, 'does not'],
       [/\b(didn't|didnt)\b/gi, 'did not'],
       [/\b(can't|cant)\b/gi, 'cannot'],
+      [/\b(couldn't|couldnt)\b/gi, 'could not'],
+      [/\b(wouldn't|wouldnt)\b/gi, 'would not'],
+      [/\b(shouldn't|shouldnt)\b/gi, 'should not'],
+      [/\b(isn't|isnt)\b/gi, 'is not'],
+      [/\b(aren't|arent)\b/gi, 'are not'],
       [/\b(won't|wont)\b/gi, 'will not'],
       [/\b(i've|ive)\b/gi, 'i have'],
       [/\b(you've|youve)\b/gi, 'you have'],
@@ -487,17 +494,17 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     const synonymMap: [RegExp, string][] = [
       [/\b(restroom|toilet|washroom|water closet|wc|lavatory)\b/gi, 'bathroom'],
       [/\b(hi|hey|greetings)\b/gi, 'hello'],
-      [/\b(bye|bye bye|see you|farewell)\b/gi, 'goodbye'],
+      [/\b(bye bye|bye|see you|farewell)\b/gi, 'goodbye'],
       [/\b(thanks|thank u|many thanks)\b/gi, 'thank you'],
-      [/\b(welcome|no problem|not at all|my pleasure|dont mention it)\b/gi, 'you are welcome'],
-      [/\b(sorry|pardon|pardon me|forgive me)\b/gi, 'excuse me'],
+      [/\b(you are welcome|welcome|no problem|not at all|my pleasure|do not mention it)\b/gi, 'you are welcome'],
+      [/\b(pardon me|pardon|forgive me)\b/gi, 'excuse me'],
       [/\b(speak slower|talk slower|speak slowly|talk more slowly)\b/gi, 'speak more slowly'],
       [/\b(repeat please|say it again|say that again|can you repeat)\b/gi, 'please repeat'],
       [/\b(how are you doing|how are things|how is it going)\b/gi, 'how are you'],
-      [/\b(how much is it|how much is this|whats the price|what is the price)\b/gi, 'how much does it cost'],
-      [/\b(im hungry|i am hungry|i want food|i would like to eat)\b/gi, 'i want to eat'],
-      [/\b(im thirsty|i am thirsty|i want water|i would like to drink)\b/gi, 'i want to drink'],
-      [/\b(i do not understand|i do not get it|i dont get it)\b/gi, 'i dont understand'],
+      [/\b(how much is it|how much is this|what is the price)\b/gi, 'how much does it cost'],
+      [/\b(i am hungry|i want food|i would like to eat)\b/gi, 'i want to eat'],
+      [/\b(i am thirsty|i want water|i would like to drink)\b/gi, 'i want to drink'],
+      [/\b(i do not understand|i do not get it)\b/gi, 'i dont understand'],
       [/\b(i am called|they call me)\b/gi, 'my name is'],
       [/\b(yeah|yep|yup)\b/gi, 'yes'],
       [/\b(nope|nah)\b/gi, 'no']
@@ -510,50 +517,80 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
     return s.replace(/\s+/g, ' ').trim();
   };
 
+  const ENGLISH_LETTER_ANSWERS: Record<string, string[]> = {
+    A: ['a', 'ay', 'ei'],
+    B: ['b', 'bee', 'bi'],
+    C: ['c', 'see', 'cee', 'si'],
+    D: ['d', 'dee', 'di'],
+    E: ['e', 'ee'],
+    F: ['f', 'ef'],
+    G: ['g', 'gee', 'ji'],
+    H: ['h', 'aitch', 'haitch', 'aych'],
+    I: ['i', 'eye', 'ai'],
+    J: ['j', 'jay'],
+    K: ['k', 'kay'],
+    L: ['l', 'el'],
+    M: ['m', 'em'],
+    N: ['n', 'en'],
+    O: ['o', 'oh'],
+    P: ['p', 'pee', 'pi'],
+    Q: ['q', 'cue', 'kyu'],
+    R: ['r', 'ar', 'are'],
+    S: ['s', 'es', 'ess'],
+    T: ['t', 'tee', 'ti'],
+    U: ['u', 'you', 'yu'],
+    V: ['v', 'vee', 'vi'],
+    W: ['w', 'double u', 'double you'],
+    X: ['x', 'ex'],
+    Y: ['y', 'why', 'wai'],
+    Z: ['z', 'zee', 'zed']
+  };
+
   const numberEquivalents: { [key: string]: string[] } = {
-    "0": ["zero", "ноль"],
-    "1": ["one", "один", "одна", "одно"],
-    "2": ["two", "два", "две"],
-    "3": ["three", "три"],
-    "4": ["four", "четыре"],
-    "5": ["five", "пять"],
-    "6": ["six", "шесть"],
-    "7": ["seven", "семь"],
-    "8": ["eight", "восемь"],
-    "9": ["nine", "девять"],
-    "10": ["ten", "десять"],
-    "11": ["eleven", "одиннадцать"],
-    "12": ["twelve", "двенадцать"],
-    "13": ["thirteen", "тринадцать"],
-    "14": ["fourteen", "четырнадцать"],
-    "15": ["fifteen", "пятнадцать"],
-    "16": ["sixteen", "шестнадцать"],
-    "17": ["seventeen", "семнадцать"],
-    "18": ["eighteen", "восемьнадцать"],
-    "19": ["nineteen", "девятнадцать"],
-    "20": ["twenty", "двадцать"],
-    "30": ["thirty", "тридцать"],
-    "40": ["forty", "сорок"],
-    "50": ["fifty", "пятьдесят"],
-    "60": ["sixty", "шестьдесят"],
-    "70": ["seventy", "семьдесят"],
-    "80": ["eighty", "восемьдесят"],
-    "90": ["ninety", "девяносто"],
-    "100": ["hundred", "сто"]
+    "0": ["zero"],
+    "1": ["one"],
+    "2": ["two"],
+    "3": ["three"],
+    "4": ["four"],
+    "5": ["five"],
+    "6": ["six"],
+    "7": ["seven"],
+    "8": ["eight"],
+    "9": ["nine"],
+    "10": ["ten"],
+    "11": ["eleven"],
+    "12": ["twelve"],
+    "13": ["thirteen"],
+    "14": ["fourteen"],
+    "15": ["fifteen"],
+    "16": ["sixteen"],
+    "17": ["seventeen"],
+    "18": ["eighteen"],
+    "19": ["nineteen"],
+    "20": ["twenty"],
+    "30": ["thirty"],
+    "40": ["forty"],
+    "50": ["fifty"],
+    "60": ["sixty"],
+    "70": ["seventy"],
+    "80": ["eighty"],
+    "90": ["ninety"],
+    "100": ["one hundred", "hundred"],
+    "1000": ["one thousand", "thousand"]
   };
 
   const checkNumberEquivalence = (userAnswer: string, correctAnswer: string): boolean => {
-    if (userAnswer === correctAnswer) return true;
-    if (/^\d+$/.test(userAnswer)) {
-      const possibleWordForms = Object.prototype.hasOwnProperty.call(numberEquivalents, userAnswer)
-        ? numberEquivalents[userAnswer]
+    const cleanUser = userAnswer.replace(/,/g, '').trim();
+    const cleanCorrect = correctAnswer.replace(/,/g, '').trim();
+    if (cleanUser === cleanCorrect) return true;
+    if (/^\d+$/.test(cleanUser)) {
+      const possibleWordForms = Object.prototype.hasOwnProperty.call(numberEquivalents, cleanUser)
+        ? numberEquivalents[cleanUser]
         : [];
-      return possibleWordForms.some(wordForm => 
-        correctAnswer === wordForm || correctAnswer.includes(wordForm)
-      );
+      return possibleWordForms.some(wordForm => cleanCorrect === wordForm);
     } else {
       for (const [digit, wordForms] of Object.entries(numberEquivalents)) {
-        if (wordForms.includes(userAnswer) && (correctAnswer === digit || correctAnswer.includes(digit))) {
+        if (wordForms.includes(cleanUser) && cleanCorrect === digit) {
           return true;
         }
       }
@@ -786,6 +823,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const character = (item as any).character || (item as any).letter || '';
         const pronunciation = item.pronunciation?.toString() || '';
         const example = item.example?.toString() || '';
+        const itemWord = item.word?.toString().trim() || '';
 
         // English alphabet (A-Z)
         const exampleWords = example
@@ -794,15 +832,30 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           .map(w => w.trim().toLowerCase())
           .filter(w => w.length > 0);
 
-        const validAnswers: string[] = [character.toLowerCase(), ...exampleWords];
-        if (pronunciation && !pronunciation.includes('/')) {
-          validAnswers.push(pronunciation.toLowerCase());
-        }
+        const letterNames = ENGLISH_LETTER_ANSWERS[character.toUpperCase()] || [];
+        const validAnswers: string[] = Array.from(new Set([
+          character,
+          character.toLowerCase(),
+          ...(itemWord ? [itemWord.toLowerCase()] : []),
+          ...exampleWords,
+          ...letterNames,
+          ...(pronunciation && !pronunciation.includes('/') ? [pronunciation.toLowerCase()] : [])
+        ]));
 
-        const primaryExample = exampleWords[0] || 'apple';
-        const maskedExample = primaryExample.length > 1
-          ? `_${primaryExample.slice(1)}`
-          : primaryExample;
+        const charLower = character.toLowerCase();
+        const candidateWords = [...(itemWord ? [itemWord.toLowerCase()] : []), ...exampleWords];
+        const startingExample = candidateWords.find(w => w.startsWith(charLower));
+        const primaryExample = startingExample || candidateWords[0] || 'apple';
+        const startsWithChar = primaryExample.startsWith(charLower);
+        let maskedExample = primaryExample;
+        if (startsWithChar && primaryExample.length > 1) {
+          maskedExample = `_${primaryExample.slice(1)}`;
+        } else {
+          const matchIdx = primaryExample.indexOf(charLower);
+          if (matchIdx >= 0) {
+            maskedExample = `${primaryExample.slice(0, matchIdx)}_${primaryExample.slice(matchIdx + 1)}`;
+          }
+        }
 
         if (selected.isPrimaryDirection) {
           // Phonics Listen & Identify Letter Mode (Pure audio test without revealing letter)
@@ -824,7 +877,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             type: 'alphabet',
             prompt: pronunciation ? `Sound: ${pronunciation}` : `Word clue: ${maskedExample}`,
             answer: validAnswers.join(' / '),
-            hint: `Which letter makes this sound or starts the word "${maskedExample}"?`,
+            hint: startsWithChar
+              ? `Which letter makes this sound or starts the word "${maskedExample}"?`
+              : `Which letter makes this sound or appears in the word "${maskedExample}"?`,
             target: character,
             id: selected.id,
             wordId: selected.wordId,
@@ -837,48 +892,86 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const wordForm = (item.phrase || '').toString();
         const digitRaw = (item.meaning || '').toString();
 
-        // Check if item is a time phrase (e.g. "2:30", "2:00", "2:45")
+        // Check if item is a clock time (e.g. "2:30", "2:00", "2:45") or a non-numeric time phrase (e.g. "What time is it?")
         const timeMatch = digitRaw.match(/\b\d{1,2}:\d{2}\b/);
         const isTimeItem = Boolean(timeMatch);
-        const digitsOnly = isTimeItem
-          ? timeMatch![0]
-          : (digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw);
+        const hasAnyDigit = /\d/.test(digitRaw);
 
-        // English numbers
-        if (selected.isPrimaryDirection) {
-          // Words to Digits
-          const promptInstruction = isTimeItem
-            ? 'Type this time in digital format (e.g. 12:00):'
-            : 'Type this number in digits:';
-
-          setCurrentQuestion({
-            type: selected.category,
-            prompt: wordForm,
-            answer: `${digitsOnly} / ${wordForm.toLowerCase()}`,
-            hint: promptInstruction,
-            target: wordForm,
-            id: selected.id,
-            wordId: selected.wordId,
-            badge: isTimeItem ? '⏰ Time & Digits' : '🔢 Digits',
-            audioText: wordForm
-          });
+        if (!hasAnyDigit) {
+          const wordCount = wordForm.trim().split(/\s+/).length;
+          const unitLabel = `${wordCount} ${wordCount === 1 ? 'word' : 'words'}`;
+          if (selected.isPrimaryDirection) {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: 'Type what you hear',
+              answer: wordForm,
+              hint: `Type what you hear (${unitLabel}):`,
+              target: wordForm,
+              id: selected.id,
+              wordId: selected.wordId,
+              badge: '⏰ Time Expression',
+              isAudioMode: true,
+              audioText: wordForm
+            });
+          } else {
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: digitRaw,
+              answer: wordForm,
+              hint: `How do you say this in English? (${unitLabel}):`,
+              target: wordForm,
+              id: selected.id,
+              wordId: selected.wordId,
+              badge: '⏰ Time Expression',
+              audioText: wordForm
+            });
+          }
         } else {
-          // Digits to English Words
-          const promptInstruction = isTimeItem
-            ? `Spell this time in English words (${wordForm.length} letters):`
-            : `Spell this number in English words (${wordForm.length} letters):`;
+          const digitsOnly = isTimeItem
+            ? timeMatch![0]
+            : (digitRaw.match(/\d[\d,]*/)?.[0]?.replace(',', '') || digitRaw);
 
-          setCurrentQuestion({
-            type: selected.category,
-            prompt: digitsOnly,
-            answer: `${wordForm.toLowerCase()} / ${digitsOnly}`,
-            hint: promptInstruction,
-            target: wordForm,
-            id: selected.id,
-            wordId: selected.wordId,
-            badge: isTimeItem ? '⏰ Time Telling' : '🔢 Number Spelling',
-            audioText: wordForm
-          });
+          const words = wordForm.trim().split(/\s+/);
+          const lengthHint = words.length > 1
+            ? `${words.length} words`
+            : `${wordForm.replace(/[^a-zA-Z]/g, '').length} letters`;
+
+          // English numbers
+          if (selected.isPrimaryDirection) {
+            // Words to Digits
+            const promptInstruction = isTimeItem
+              ? 'Type this time in digital format (e.g. 12:00):'
+              : 'Type this number in digits:';
+
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: wordForm,
+              answer: `${digitsOnly} / ${wordForm}`,
+              hint: promptInstruction,
+              target: wordForm,
+              id: selected.id,
+              wordId: selected.wordId,
+              badge: isTimeItem ? '⏰ Time & Digits' : '🔢 Digits',
+              audioText: wordForm
+            });
+          } else {
+            // Digits to English Words
+            const promptInstruction = isTimeItem
+              ? `Spell this time in English words (${lengthHint}):`
+              : `Spell this number in English words (${lengthHint}):`;
+
+            setCurrentQuestion({
+              type: selected.category,
+              prompt: digitsOnly,
+              answer: `${wordForm} / ${digitsOnly}`,
+              hint: promptInstruction,
+              target: wordForm,
+              id: selected.id,
+              wordId: selected.wordId,
+              badge: isTimeItem ? '⏰ Time Telling' : '🔢 Number Spelling',
+              audioText: wordForm
+            });
+          }
         }
       } else if (selected.category === 'basicPhrases') {
         const item = selected.item as PhraseItem;
@@ -893,11 +986,12 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             const firstLetter = cleanMissing.charAt(0);
             const slots = '_'.repeat(Math.max(1, cleanMissing.length - 1));
             const clozeDisplay = `${firstLetter}${slots}`;
+            const speakerBLead = dialogue.speakerBPrefix ? `${dialogue.speakerBPrefix} ` : '';
 
             setCurrentQuestion({
               type: selected.category,
-              prompt: `A: "${dialogue.speakerA}" | B: "${dialogue.speakerBPrefix} ${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
-              answer: `${cleanMissing.toLowerCase()} / ${phrase.toLowerCase()}`,
+              prompt: `A: "${dialogue.speakerA}" | B: "${speakerBLead}${clozeDisplay}${dialogue.speakerBSuffix || ''}"`,
+              answer: `${cleanMissing} / ${phrase}`,
               hint: `Complete Speaker B's reply (${cleanMissing.length} letters):`,
               target: phrase,
               id: selected.id,
@@ -917,7 +1011,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             // Dynamic cloze on last word
             const words = phrase.split(' ');
             let clozePrompt = phrase;
-            let clozeAnswer = phrase.toLowerCase();
+            let clozeAnswer = phrase;
             let letterNotice = '';
 
             if (words.length >= 2) {
@@ -928,7 +1022,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               const firstLetter = cleanLast.charAt(0);
               const slots = '_'.repeat(Math.max(1, cleanLast.length - 1));
               clozePrompt = `${startWords} ${firstLetter}${slots}${punctuation}`;
-              clozeAnswer = `${cleanLast.toLowerCase()} / ${phrase.toLowerCase()}`;
+              clozeAnswer = `${cleanLast} / ${phrase}`;
               letterNotice = ` • ${cleanLast.length} letters`;
             }
 
@@ -950,7 +1044,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           setCurrentQuestion({
             type: selected.category,
             prompt: 'Type what you hear',
-            answer: phrase.toLowerCase(),
+            answer: phrase,
             hint: `Type what you hear (${wordCount} ${wordCount === 1 ? 'word' : 'words'}):`,
             target: phrase,
             id: selected.id,
@@ -967,12 +1061,16 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
         const definition = (item.meaning || '').toString();
 
         const cleanWord = word.trim();
-        const validTargets = [cleanWord.toLowerCase()];
+        const validTargets = [cleanWord];
         if (cleanWord.toLowerCase().startsWith('to ')) {
-          validTargets.push(cleanWord.slice(3).toLowerCase());
+          validTargets.push(cleanWord.slice(3));
         }
         const targetAnswer = validTargets.join(' / ');
-        const firstLetter = cleanWord.charAt(0).toUpperCase();
+        const wordParts = cleanWord.split(/\s+/);
+        const isMultiWord = wordParts.length > 1;
+        const unitLabel = isMultiWord
+          ? `${wordParts.length} words`
+          : `${cleanWord.length} ${cleanWord.length === 1 ? 'letter' : 'letters'}`;
 
         if (selected.isPrimaryDirection) {
           // Mode: Listen & Type Audio Dictation
@@ -980,7 +1078,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
             type: selected.category,
             prompt: 'Type what you hear',
             answer: targetAnswer,
-            hint: `Type what you hear (${cleanWord.length} letters):`,
+            hint: `Type what you hear (${unitLabel}):`,
             target: cleanWord,
             id: selected.id,
             wordId: selected.wordId,
@@ -990,12 +1088,14 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           });
         } else {
           // Mode: Meaning and First-Letter Cloze Scaffold
-          const slots = '_'.repeat(Math.max(1, cleanWord.length - 1));
+          const clozeHint = isMultiWord && cleanWord.toLowerCase().startsWith('to ')
+            ? `To ${wordParts.slice(1).map(p => `${p.charAt(0)}${'_'.repeat(Math.max(1, p.length - 1))}`).join(' ')}`
+            : `${cleanWord.charAt(0).toUpperCase()}${'_'.repeat(Math.max(1, cleanWord.length - 1))}`;
           setCurrentQuestion({
             type: selected.category,
             prompt: definition,
             answer: targetAnswer,
-            hint: `What is the English word? (${firstLetter}${slots} • ${cleanWord.length} letters):`,
+            hint: `What is the English word? (${clozeHint} • ${unitLabel}):`,
             target: cleanWord,
             id: selected.id,
             wordId: selected.wordId,
@@ -1202,8 +1302,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
       isInitialMount.current = false;
       getRandomQuestion();
 
-      correctSoundRef.current = new Audio('audio/sounds/correct.mp3');
-      incorrectSoundRef.current = new Audio('audio/sounds/incorrect.mp3');
+      correctSoundRef.current = new Audio('/audio/sounds/correct.mp3');
+      incorrectSoundRef.current = new Audio('/audio/sounds/incorrect.mp3');
     }
   }, [getRandomQuestion]);
 
@@ -1364,8 +1464,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
           break;
         }
 
-        // 2. Number equivalence (e.g. '1' <=> 'one' <=> 'один')
-        if (checkNumberEquivalence(userAnswerNormalized, targetNormalized)) {
+        // 2. Number equivalence (e.g. '1' <=> 'one')
+        if (currentQuestion.type === 'numbers' && checkNumberEquivalence(userAnswerNormalized, targetNormalized)) {
           isAnswerCorrect = true;
           break;
         }
@@ -1387,7 +1487,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
         // Article tolerance ("where is restroom" === "where is the bathroom")
         const stripArticles = (s: string) => s.replace(/\b(the|a|an)\b/gi, '').replace(/\s+/g, ' ').trim();
-        if (stripArticles(userEnglishNorm) === stripArticles(targetEnglishNorm)) {
+        const strippedUser = stripArticles(userEnglishNorm);
+        const strippedTarget = stripArticles(targetEnglishNorm);
+        if (currentQuestion.type !== 'alphabet' && strippedUser.length > 0 && strippedTarget.length > 0 && strippedUser === strippedTarget) {
           isAnswerCorrect = true;
           break;
         }
@@ -1561,7 +1663,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
 
   // --- RENDER RECAP SCREEN WHEN SESSION IS COMPLETE ---
   if (isSessionComplete) {
-    const percentage = sessionGoal > 0 ? Math.round((sessionScore / sessionGoal) * 100) : 0;
+    const completedTotal = sessionAnswered > 0 ? sessionAnswered : sessionGoal;
+    const percentage = completedTotal > 0 ? Math.min(100, Math.round((sessionScore / completedTotal) * 100)) : 0;
 
     let headlineTitle = '';
     let headlinePronunciation = '';
@@ -1643,14 +1746,14 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
               </svg>
               <div className="recap-ring-label">
                 <span className="recap-score-percent">{percentage}%</span>
-                <span className="recap-score-ratio">{sessionScore} / {sessionGoal} correct</span>
+                <span className="recap-score-ratio">{sessionScore} / {completedTotal} correct</span>
               </div>
             </div>
 
             <div className="recap-stats-grid" role="group" aria-label="Session summary stats">
               <div className="recap-stat-card">
                 <span className="stat-label"><span aria-hidden="true">🎯 </span>Goal</span>
-                <span className="stat-value">{sessionGoal} Qs</span>
+                <span className="stat-value">{completedTotal} Qs</span>
               </div>
               <div className="recap-stat-card correct">
                 <span className="stat-label"><span aria-hidden="true">✅ </span>Correct</span>
@@ -1681,7 +1784,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                     <div className="missed-word-details">
                       <div className="missed-word-prompt">{renderClozeText(item.prompt)}</div>
                       <div className="missed-word-answers">
-                        <span className="correct-answer-text">Answer: <strong>{item.answer.split('/')[0]}</strong></span>
+                        <span className="correct-answer-text">Answer: <strong>{item.answer.split('/')[0].trim()}</strong></span>
                         {item.userAnswer && (
                           <span className="user-answer-text">You typed: <span className="strikethrough">{item.userAnswer}</span></span>
                         )}
@@ -1709,6 +1812,9 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                 {QUIZ_CATEGORIES.map((cat) => {
                   const isActive = activeCategory === cat.id;
                   const countInfo = curriculumStats[cat.id];
+                  const totalCount = countInfo?.total || 0;
+                  const unitBase = cat.id === 'alphabet' ? 'letter' : cat.id === 'basicPhrases' ? 'phrase' : cat.id === 'commonWords' ? 'word' : 'item';
+                  const unitText = `${totalCount} ${totalCount === 1 ? unitBase : `${unitBase}s`}`;
                   return (
                     <button
                       key={cat.id}
@@ -1718,7 +1824,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                       tabIndex={isActive ? 0 : -1}
                       className={`recap-topic-pill ${isActive ? 'active' : ''}`}
                       onClick={() => handleCategoryChange(cat.id)}
-                      title={`Practice ${cat.label} (${countInfo?.total || 0} words)`}
+                      title={`Practice ${cat.label} (${unitText})`}
                     >
                       <span className="cat-icon" aria-hidden="true">{cat.icon}</span>
                       <span className="cat-label">{cat.label}</span>
@@ -1901,7 +2007,7 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                 <span className="dialogue-avatar" aria-hidden="true">B</span>
                 <div className="dialogue-content">
                   <span className="dialogue-text">
-                    {currentQuestion.dialogue.speakerBPrefix}{' '}
+                    {currentQuestion.dialogue.speakerBPrefix ? `${currentQuestion.dialogue.speakerBPrefix} ` : ''}
                     <strong className="dialogue-cloze-target">{renderClozeText(currentQuestion.dialogue.clozeDisplay)}</strong>
                     {currentQuestion.dialogue.speakerBSuffix || ''}
                   </span>
@@ -2015,8 +2121,8 @@ const Quiz: React.FC<QuizProps> = ({ data }) => {
                         <span>The correct answer is: </span>
                         <strong className="feedback-correct-word">
                           {currentQuestion.answer.includes('/') 
-                            ? currentQuestion.answer.split('/')[0]
-                            : currentQuestion.answer}
+                            ? currentQuestion.answer.split('/')[0].trim()
+                            : currentQuestion.answer.trim()}
                         </strong>
                       </div>
                     )}
