@@ -107,7 +107,7 @@ for (const route of ROUTES) {
       /<noscript>[\s\S]*?<\/noscript>/i,
       () => `<noscript>
       <h1>${escapeHtml(route.heading)}</h1>
-      <p>${escapeHtml(route.summary)} Please enable JavaScript to use the full interactive app.</p>
+      <p>${escapeHtml(route.summary)} Created by <a href="https://johnbendfeldt.com/" rel="author">John Bendfeldt</a>. Please enable JavaScript to use the full interactive app.</p>
       <nav aria-label="Lessons and resources">
         <ul>
           <li><a href="/">Basic English Home</a></li>
