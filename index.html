@@ -17,6 +17,8 @@
     <title>Basic English | Free Online English for Beginners</title>
     <meta name="description" content="Learn basic English online for free. Study the English alphabet &amp; phonics, essential phrases, common words, and numbers with studio neural audio and interactive quizzes. Perfect for ESL beginners." />
     <meta name="keywords" content="basic english, learn english online, free english, esl for beginners, english alphabet, phonics, basic english online, free basic english, english phrases, english vocabulary, english numbers, free english lessons" />
+    <meta name="author" content="John Bendfeldt" />
+    <link rel="author" href="https://johnbendfeldt.com/" />
     <link rel="canonical" href="https://basicenglish.school/" />
 
     <!-- Open Graph (Facebook, LinkedIn, etc.) -->
@@ -54,11 +56,24 @@
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Person",
+          "@id": "https://johnbendfeldt.com/#person",
+          "name": "John Bendfeldt",
+          "url": "https://johnbendfeldt.com/",
+          "sameAs": [
+            "https://github.com/JohnBendfeldt",
+            "https://www.linkedin.com/in/johnbendfeldt"
+          ]
+        },
+        {
           "@type": "EducationalOrganization",
           "@id": "https://basiclanguage.school/#organization",
           "name": "Basic Language School",
           "url": "https://basiclanguage.school/",
           "logo": "https://basiclanguage.school/logo512.png",
+          "founder": {
+            "@id": "https://johnbendfeldt.com/#person"
+          },
           "sameAs": [
             "https://basicenglish.school/",
             "https://basicfrench.org/",
@@ -75,6 +90,9 @@
           "url": "https://basicenglish.school/",
           "description": "Free interactive ESL phonics, phrases, numbers, vocabulary, and quiz web app for English beginners.",
           "inLanguage": "en",
+          "author": {
+            "@id": "https://johnbendfeldt.com/#person"
+          },
           "publisher": {
             "@id": "https://basiclanguage.school/#organization"
           }
@@ -92,6 +110,12 @@
           "browserRequirements": "Requires JavaScript",
           "inLanguage": "en",
           "isAccessibleForFree": true,
+          "author": {
+            "@id": "https://johnbendfeldt.com/#person"
+          },
+          "creator": {
+            "@id": "https://johnbendfeldt.com/#person"
+          },
           "provider": {
             "@id": "https://basiclanguage.school/#organization"
           },
@@ -126,6 +150,9 @@
           "educationalLevel": "Beginner",
           "teaches": "English phonics, pronunciation, everyday phrases, numbers, and core vocabulary",
           "isAccessibleForFree": true,
+          "creator": {
+            "@id": "https://johnbendfeldt.com/#person"
+          },
           "provider": {
             "@id": "https://basiclanguage.school/#organization"
           },
@@ -151,7 +178,7 @@
       <p>
         Learn basic English online for free at basicenglish.school. Study the English alphabet,
         phonics, essential phrases, common words, numbers, and studio neural pronunciation with interactive
-        exercises. Free English lessons for ESL beginners. Please enable JavaScript to use the full app.
+        exercises. Free English lessons for ESL beginners. Created by <a href="https://johnbendfeldt.com/" rel="author">John Bendfeldt</a>. Please enable JavaScript to use the full app.
       </p>
       <nav aria-label="Lessons and resources">
         <ul>

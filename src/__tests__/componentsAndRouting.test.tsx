@@ -247,5 +247,9 @@ describe('App Routing, Navigation, Alphabet, AuthModal & UserMenu', () => {
     const footerLink = screen.getByRole('link', { name: 'Basic Language School' });
     expect(footerLink).toHaveAttribute('href', 'https://basiclanguage.school');
     expect(footerLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const authorLink = screen.getByRole('link', { name: 'John Bendfeldt' });
+    expect(authorLink).toHaveAttribute('href', 'https://johnbendfeldt.com');
+    expect(authorLink).toHaveAttribute('rel', 'noopener noreferrer author');
   });
 });
