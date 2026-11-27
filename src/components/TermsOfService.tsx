@@ -71,7 +71,7 @@ const TermsOfService: React.FC<TermsOfServiceProps> = ({ onNavigate }) => {
         <p className="legal-contact-block">
           <strong>Basic English</strong><br />
           Attn: John Bendfeldt<br />
-          Email: <a href="mailto:dev@basicenglish.school">dev@basicenglish.school</a><br />
+          Email: <a href="mailto:dev@basiclanguage.school">dev@basiclanguage.school</a><br />
           Website: <a href="https://basicenglish.school">https://basicenglish.school</a><br />
           GitHub:{' '}
           <a
