@@ -139,7 +139,7 @@ The application is configured for deployment on **Netlify** via [`netlify.toml`]
 **John Bendfeldt**  
 * GitHub: [@JohnBendfeldt](https://github.com/JohnBendfeldt)  
 * Live App: [basicenglish.school](https://basicenglish.school)  
-* Contact: [dev@basicenglish.school](mailto:dev@basicenglish.school)
+* Contact: [dev@basiclanguage.school](mailto:dev@basiclanguage.school)
 
 ---
 
